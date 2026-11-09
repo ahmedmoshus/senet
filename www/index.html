@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>سِنِت — Senet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@600;700&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bs:min(96vw,calc((100dvh - 338px)/1.02),600px);
  --bg1:#17332a;--bg2:#0d1a16;--panel:#14261f;--panel2:#1b3329;--line:#2a4a3c;--acc:#e3b95a;--acc2:#f6dc9a;--ink:#f3ecd8;--mute:#9bb3a6;--red:#e0584c;
@@ -160,6 +160,17 @@ header{width:var(--bs);display:flex;align-items:center;justify-content:space-bet
 .wd.cur{border-color:var(--acc);background:var(--panel2)}
 .wd.lk{opacity:.42}
 .wtag{display:inline-block;margin:0 4px 6px;padding:3px 12px;border-radius:99px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);color:var(--ink);font-weight:700;font-size:12.5px}
+
+/* ---------- Egyptian skin ---------- */
+.card{border:2px solid #c9993a;box-shadow:0 0 0 3px rgba(20,12,2,.85),0 0 0 5px #8a6a2a,0 20px 60px rgba(0,0,0,.65);padding-top:26px}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:10px;border-radius:17px 17px 0 0;background:repeating-linear-gradient(90deg,#d9a531 0 14px,#1f4fa8 14px 22px,#d9a531 22px 30px,#b23a2a 30px 38px,#d9a531 38px 46px,#1f8f86 46px 54px)}
+.card h1,.card h2{font-family:'El Messiri','Tajawal',sans-serif;letter-spacing:.5px;text-shadow:0 2px 0 rgba(0,0,0,.45)}
+.card h1{font-size:40px;background:linear-gradient(180deg,#fff3c4,#e2b04a 60%,#b9832a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5))}
+.btn{border:1px solid #fff0b8;border-radius:12px;font-family:'El Messiri','Tajawal',sans-serif}
+header .chip,#tools button{border-color:#8a6a2a}
+.logo svg{width:150px;height:70px;display:block;margin:0 auto}
+#eName{font-family:'El Messiri','Tajawal',sans-serif}
+.lvTag,.wtag{font-family:'El Messiri','Tajawal',sans-serif}
 </style>
 </head>
 <body>
@@ -201,13 +212,16 @@ const cache = {};
 const GC = (k, f) => cache[k] || (cache[k] = f());
 const SPH = () => GC('s', () => new T.SphereGeometry(1, 24, 16));
 const HEM = () => GC('h', () => new T.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2));
-const CYL = () => GC('c', () => new T.CylinderGeometry(1, 1, 1, 20));
+const CYL = () => GC('c', () => new T.CylinderGeometry(1, 1, 1, 22));
+const FLARE = () => GC('fl', () => new T.CylinderGeometry(1, .7, 1, 22));
+const SKIRT = () => GC('sk', () => new T.CylinderGeometry(.78, 1, 1, 22));
 const CON = () => GC('n', () => new T.ConeGeometry(1, 1, 16));
 const BOX = () => GC('b', () => new T.BoxGeometry(1, 1, 1));
 const TOR = () => GC('t', () => new T.TorusGeometry(1, .2, 8, 18, Math.PI));
-const RNG = () => GC('r', () => new T.TorusGeometry(1, .16, 8, 24));
+const RNG = () => GC('r', () => new T.TorusGeometry(1, .1, 8, 28));
+const RNGF = () => GC('rf', () => new T.TorusGeometry(1, .3, 10, 24));
 const CAP = (r, l) => GC('cap' + r + '_' + l, () => new T.CapsuleGeometry(r, l, 6, 12));
-const M = (col, o) => new T.MeshStandardMaterial(Object.assign({ color: col, roughness: .55, metalness: .04 }, o || {}));
+const M = (col, o) => new T.MeshStandardMaterial(Object.assign({ color: col, roughness: .6, metalness: 0 }, o || {}));
 function mk(p, geo, mat, x, y, z, sx, sy, sz, rx, ry, rz) {
   const m = new T.Mesh(geo, mat);
   m.position.set(x || 0, y || 0, z || 0);
@@ -215,233 +229,218 @@ function mk(p, geo, mat, x, y, z, sx, sy, sz, rx, ry, rz) {
   m.scale.set(sx === undefined ? 1 : sx, sy === undefined ? 1 : sy, sz === undefined ? 1 : sz);
   m.rotation.set(rx || 0, ry || 0, rz || 0); m.castShadow = true; p.add(m); return m;
 }
-const HEROES = [0, 1, 2, 3, 4, 5, 9, 7];
-const NOHAT = [4, 10, 15];
+// 0 pharaoh 1 queen 2 cat 3 falcon 4 jackal 5 ibis 6 crocodile 7 mummy 8 scarab 9 lioness 10 sphinx 11 cobra 12 hippo 13 scribe 14 ram 15 guard
+const HEROES = [0, 1, 13, 15, 2, 3, 4, 7];
+const NOHAT = [1, 8, 11];
 
 function make(spec) {
-  const sp = (spec.sp | 0) % 16, c = spec.c || '#ff9f43', mood = spec.mood | 0;
-  const C = new T.Color(c), c2 = C.clone().lerp(new T.Color('#ffffff'), .6), cd = C.clone().multiplyScalar(.62);
-  const skin = M(C), light = M(c2), dark = M(cd);
-  const white = M('#ffffff', { roughness: .3 }), black = M('#15121a', { roughness: .25, metalness: .1 }), pink = M('#ff8fab'), orange = M('#ff9f1a'), gold = M('#ffd24a', { metalness: .6, roughness: .3 });
+  const sp = (spec.sp | 0) % 16, mood = spec.mood | 0;
+  const C = new T.Color(spec.c || '#2a6fdb'), cl = C.clone().lerp(new T.Color('#ffffff'), .62), cd = C.clone().multiplyScalar(.6);
+  const main = M(C), light = M(cl), dark = M(cd);
+  const gold = M('#f2c14e', { metalness: .85, roughness: .25 }), white = M('#fffdf6', { roughness: .45 }), black = M('#15121a', { roughness: .3 });
+  const linen = M('#fbf6e6', { roughness: .8 }), skin = M('#c98d5e'), skinD = M('#a86f45'), hair = M('#191420', { roughness: .5 }), red = M('#d1343f'), lapis = M('#2456b8', { roughness: .4 });
   const g = new T.Group(), rig = new T.Group(); g.add(rig);
-  const head = new T.Group(); head.position.y = 1.55; rig.add(head);
-  const eyes = [];
-  let headScale = [.64, .58, .6], torso = true, feet = true, arms = true, eyeKind = 0, faceZ = .5, eyeX = .23, eyeY = .06, mouthY = -.2, mouthZ = .54;
-  const parts = { rig, head, eyes, armL: null, armR: null, tail: null, g };
-  // ---- species-specific geometry (some override defaults) ----
-  const S = {
-    torsoMat: skin, headMat: skin
-  };
-  if (sp === 2) { headScale = null; S.metal = M('#b8c4d6', { metalness: .7, roughness: .3 }); S.headMat = S.metal; S.torsoMat = M(C, { metalness: .6, roughness: .3 }); }
-  if (sp === 6) { feet = false; }
-  if (sp === 7) { headScale = [.72, .64, .62]; eyeKind = 1; eyeX = .26; eyeY = .02; }
-  if (sp === 8) { headScale = [.78, .5, .62]; }
-  if (sp === 9) { S.headMat = dark; S.torsoMat = dark; }
-  if (sp === 10) { headScale = [.55, .5, .55]; S.headMat = light; S.torsoMat = light; }
-  if (sp === 12) { feet = false; arms = false; headScale = [.7, .72, .66]; eyeKind = 1; }
-  if (sp === 13) { headScale = [.52, .66, .5]; }
-  if (sp === 14) { torso = false; feet = false; arms = false; headScale = [.78, .52, .72]; eyeKind = 1; }
-  if (sp === 15) { S.headMat = M('#ffd9b3'); }
-  if (sp === 11) { headScale = null; S.headMat = M(C); }
-  if (sp === 14) { S.headMat = M(C, { transparent: true, opacity: .86, roughness: .15 }); }
-  // head
-  if (headScale) mk(head, SPH(), S.headMat, 0, 0, 0, headScale[0], headScale[1], headScale[2]);
-  else if (sp === 2) mk(head, BOX(), S.headMat, 0, 0, 0, 1.05, .86, .86);
-  else if (sp === 11) { mk(head, SPH(), S.headMat, 0, 0, 0, .52, .56, .56); mk(head, SPH(), M(c), .38, 0, 0, .34, .54, .5); mk(head, SPH(), M(c), -.38, 0, 0, .34, .54, .5); mk(head, SPH(), M(cd), 0, .56, 0, .07, .13, .07, 0, 0, .2); mk(head, SPH(), M('#4cae4f'), .11, .62, 0, .12, .04, .08, 0, 0, .3); }
-  const hx = headScale ? headScale[0] : (sp === 2 ? .52 : .6), hy = headScale ? headScale[1] : (sp === 2 ? .43 : .55), hz = headScale ? headScale[2] : (sp === 2 ? .43 : .56);
-  // torso
-  const tY = .72;
-  if (torso) {
-    if (sp === 2) mk(rig, BOX(), S.torsoMat, 0, tY, 0, .86, .8, .62);
-    else if (sp === 6) { mk(rig, SPH(), skin, 0, .75, 0, .48, .6, .44); mk(rig, CYL(), skin, 0, .45, 0, .48, .5, .44); for (let i = 0; i < 5; i++) { const a = (i / 5) * 6.283; mk(rig, SPH(), skin, Math.cos(a) * .36, .2, Math.sin(a) * .32, .17, .17, .17); } }
-    else if (sp === 10) { mk(rig, CYL(), light, 0, .6, 0, .3, .65, .3); }
-    else if (sp === 13) { mk(rig, CAP(.42, .3), skin, 0, .75, 0, 1, 1, 1); mk(rig, CYL(), M('#b5651d'), 0, .12, 0, .5, .24, .5); }
-    else if (sp === 15) { mk(rig, SPH(), M(C, { metalness: .65, roughness: .3 }), 0, tY, 0, .5, .55, .46); }
-    else if (sp === 9) { mk(rig, SPH(), dark, 0, tY, 0, .5, .58, .46); mk(rig, SPH(), white, 0, tY - .02, .14, .36, .46, .34); }
-    else if (sp === 7) mk(rig, SPH(), skin, 0, tY, 0, .4, .5, .36);
-    else { mk(rig, SPH(), S.torsoMat, 0, tY, 0, .5, .55, .46); if (sp !== 12) mk(rig, SPH(), light, 0, tY - .04, .2, .33, .38, .2); }
-  }
-  // feet
-  if (feet && sp !== 13) { [-1, 1].forEach(s => { if (sp === 9) mk(rig, SPH(), orange, s * .22, .08, .18, .2, .08, .28); else if (sp === 8) mk(rig, SPH(), skin, s * .3, .1, .22, .24, .09, .32); else mk(rig, SPH(), sp === 2 ? M('#6b7a90', { metalness: .6 }) : dark, s * .24, .12, .14, .17, .11, .22); }); }
-  // arms
-  if (arms && sp !== 13) {
-    [-1, 1].forEach(s => {
-      const pv = new T.Group(); pv.position.set(s * (sp === 2 ? .5 : .5), 1.0, 0); rig.add(pv);
-      const am = sp === 2 ? S.metal : (sp === 9 ? dark : (sp === 15 ? M('#aab4c4', { metalness: .7 }) : skin));
-      if (sp === 9) mk(pv, SPH(), am, s * .06, -.22, 0, .09, .3, .2, 0, 0, s * .25); else mk(pv, CAP(.09, .26), am, 0, -.2, 0, 1, 1, 1);
-      if (sp !== 9) mk(pv, SPH(), sp === 15 ? M('#8d97a8', { metalness: .7 }) : (sp === 2 ? dark : light), 0, -.4, 0, .1, .1, .1);
-      if (s < 0) parts.armL = pv; else parts.armR = pv;
-    });
-  }
-  if (sp === 13) { // cactus arms
-    [-1, 1].forEach(s => { const pv = new T.Group(); pv.position.set(s * .38, .95, 0); rig.add(pv); mk(pv, CAP(.1, .2), skin, s * .16, 0, 0, 1, 1, 1, 0, 0, Math.PI / 2); mk(pv, CAP(.1, .22), skin, s * .3, .2, 0, 1, 1, 1); if (s < 0) parts.armL = pv; else parts.armR = pv; });
-    for (let i = 0; i < 8; i++) mk(rig, CON(), M('#fff5c0'), Math.cos(i) * .4, .5 + (i % 4) * .22, Math.sin(i) * .38 + .06, .02, .06, .02, Math.sin(i) * .9, 0, -Math.cos(i) * .9);
-  }
-  // ---- eyes ----
-  const eyeMatBlack = black;
-  function makeEye(s) {
-    const e = new T.Group(); e.position.set(s * eyeX, eyeY, faceZ * (hz / .6) + (sp === 2 ? .02 : 0)); head.add(e);
-    const ey = hy / .58;
-    e.position.y = eyeY * ey;
-    if (sp === 2) { mk(e, BOX(), M('#7df9ff', { emissive: '#3cd8ff', emissiveIntensity: .9 }), 0, 0, .06, .13, .1, .03); }
-    else if (eyeKind === 1) { mk(e, SPH(), eyeMatBlack, 0, 0, 0, .15, .21, .08, 0, 0, s * .3); mk(e, SPH(), white, -.04, .07, .06, .045, .045, .03); }
-    else if (sp === 5) { mk(e, SPH(), white, 0, 0, 0, .2, .2, .1); mk(e, RNG(), M('#ffcf4a'), 0, 0, .05, .2, .2, .35); mk(e, SPH(), eyeMatBlack, 0, 0, .06, .09, .09, .05); mk(e, SPH(), white, -.03, .04, .1, .03, .03, .02); }
-    else { mk(e, SPH(), white, 0, 0, 0, .14, .16, .09); mk(e, SPH(), eyeMatBlack, 0, 0, .06, .075, .09, .05); mk(e, SPH(), white, -.025, .03, .1, .027, .027, .02); }
-    eyes.push(e);
-    return e;
-  }
-  if (sp === 11) { // jack face
-    [-1, 1].forEach(s => mk(head, CON(), M('#ffe066', { emissive: '#ffb300', emissiveIntensity: .9 }), s * .22, .08, .55, .1, .15, .04));
-    mk(head, BOX(), M('#ffe066', { emissive: '#ffb300', emissiveIntensity: .9 }), 0, -.2, .56, .3, .07, .03);
-    [-1, 1].forEach(s => mk(head, BOX(), M('#ffe066', { emissive: '#ffb300', emissiveIntensity: .9 }), s * .1, -.14, .56, .06, .08, .03));
-  } else if (sp === 8) { [-1, 1].forEach(s => { const e = new T.Group(); e.position.set(s * .38, .34, .24); head.add(e); mk(e, SPH(), skin, 0, 0, 0, .21, .21, .21); mk(e, SPH(), white, 0, .02, .12, .14, .14, .1); mk(e, SPH(), black, 0, .02, .19, .07, .08, .05); eyes.push(e); }); }
-  else if (sp === 10) { [-1, 1].forEach(s => { const e = makeEye(s); e.position.z = .5; e.position.y = -.02; }); }
-  else if (sp === 6) { [-1, 1].forEach(s => { const e = makeEye(s); e.position.z = .55; }); }
-  else { makeEye(-1); makeEye(1); }
-  // mouth
-  if (sp !== 11 && sp !== 5 && sp !== 9) {
-    let my = (mouthY) * (hy / .58), mz = mouthZ * (hz / .6) - .02;
-    if (sp === 8) { my = -.1; mk(head, TOR(), black, 0, my, mz - .02, .3, .22, .1, 0, 0, Math.PI); }
-    else if (sp === 2) { for (let i = -2; i <= 2; i++) mk(head, BOX(), M('#2f3a4c'), i * .09, -.2, .44, .055, .08, .03); }
-    else if (sp === 14) { mk(head, TOR(), black, 0, -.14, mz - .04, .12, .1, .08, 0, 0, Math.PI); }
-    else {
-      const wide = mood === 4 ? 1.25 : (mood === 2 ? .8 : 1);
-      const m = mk(head, TOR(), black, mood === 0 ? .04 : 0, my, mz, .12 * wide, .1 * (mood === 2 ? -1 : 1), .06, 0, 0, Math.PI);
-      if (mood === 2) m.rotation.z = 0;
-      if (mood === 0) m.rotation.z = Math.PI + .18;
-    }
-  }
-  if (sp === 4 && mood !== 2) mk(head, BOX(), white, 0, -.3, mouthZ * (hz / .6) - .03, .07, .08, .02);
-  // cheeks
-  if (sp !== 2 && sp !== 11 && sp !== 14) [-1, 1].forEach(s => mk(head, SPH(), M('#ff7a90', { transparent: true, opacity: mood === 1 ? .9 : .55 }), s * .38 * (hx / .64), -.1, .43 * (hz / .6), mood === 1 ? .12 : .08, .06, .03));
-  // brows / lids
-  if (mood === 2 && sp !== 11) [-1, 1].forEach(s => mk(head, BOX(), black, s * eyeX, eyeY + .2 * (hy / .58), .56 * (hz / .6), .2, .045, .04, 0, 0, s * -.5));
-  if (mood === 3 && sp !== 11 && sp !== 8) [-1, 1].forEach(s => mk(head, HEM(), S.headMat === skin ? M(C) : S.headMat, s * eyeX, eyeY * (hy / .58) + .01, .5 * (hz / .6) - .02, .17, .17, .12, Math.PI / 2 + .1, 0, 0));
-  if (mood === 1 && sp !== 11) mk(head, SPH(), M('#7fd4ff', { transparent: true, opacity: .8 }), .5 * (hx / .64), .25, .3, .05, .09, .05);
+  const head = new T.Group(); head.position.y = 1.5; rig.add(head);
+  const eyes = [], parts = { rig, head, eyes, g };
+  const H = { x: .6, y: .55, z: .56, ex: .23, ey: .05, er: .13, top: .55, mouth: -.24, face: true };
+  const human = [0, 1, 13, 15].includes(sp);
+  let headMat = human || sp === 10 ? skin : main, bodyMat = main, feet = true, arms = true, armMat = null, mouth = true, cheeks = true;
+  if (sp === 3) { headMat = M(cl); }
+  if (sp === 5) { headMat = M('#23202c'); H.x = .5; H.y = .48; H.z = .48; H.ex = .2; mouth = false; cheeks = false; }
+  if (sp === 6) { H.x = .56; H.y = .46; H.z = .5; H.ey = .2; H.ex = .25; mouth = false; }
+  if (sp === 7) { headMat = M('#eadfc2', { roughness: .9 }); bodyMat = headMat; cheeks = false; }
+  if (sp === 8) { headMat = M('#231a2c'); H.x = .46; H.y = .42; H.z = .44; H.ex = .18; }
+  if (sp === 11) { H.x = .42; H.y = .36; H.z = .44; H.ex = .17; H.er = .1; feet = false; arms = false; cheeks = false; H.top = .36; }
+  if (sp === 12) { H.x = .62; H.y = .52; H.z = .54; H.ey = .2; H.ex = .27; mouth = false; }
+  if (sp === 4 || sp === 3) mouth = false;
+  const onHead = (x, y) => H.z * Math.sqrt(Math.max(.04, 1 - (x / H.x) * (x / H.x) - (y / H.y) * (y / H.y)));
+  mk(head, SPH(), headMat, 0, 0, 0, H.x, H.y, H.z);
 
-  // ---- species extras ----
-  const hy2 = hy;
+  /* ---------- bodies ---------- */
+  function collar(y, r) { mk(rig, CYL(), gold, 0, y, 0, r, .07, r * .88); mk(rig, CYL(), M(C), 0, y + .012, 0, r * .8, .07, r * .7); mk(rig, CYL(), gold, 0, y + .024, 0, r * .58, .07, r * .5); }
+  function humanBody(sm) {
+    mk(rig, SPH(), sm, 0, .76, 0, .4, .46, .36);
+    mk(rig, SKIRT(), linen, 0, .42, 0, .46, .42, .42);
+    mk(rig, CYL(), gold, 0, .63, 0, .385, .07, .35);
+    mk(rig, BOX(), main, 0, .42, .4, .17, .36, .05); mk(rig, BOX(), gold, 0, .3, .43, .17, .05, .03);
+    collar(1.07, .5);
+  }
+  function animalBody(bm, belly) {
+    mk(rig, SPH(), bm, 0, .72, 0, .48, .54, .44);
+    if (belly) mk(rig, SPH(), belly, 0, .68, .2, .32, .38, .2);
+    collar(1.08, .47);
+  }
+  if (human) {
+    if (sp === 1) { mk(rig, SKIRT(), linen, 0, .44, 0, .5, .88, .46); mk(rig, SPH(), linen, 0, .82, 0, .39, .36, .35); mk(rig, CYL(), gold, 0, .7, 0, .37, .06, .34); mk(rig, BOX(), main, .0, .42, .44, .12, .5, .04); collar(1.07, .5); feet = false; }
+    else humanBody(skin);
+    armMat = skin;
+  } else if (sp === 4) { humanBody(main); armMat = main; }
+  else if (sp === 10) { bodyMat = M('#dba95a'); animalBody(bodyMat, M('#f3d9a0')); armMat = bodyMat; }
+  else if (sp === 11) {
+    [[.46, .12], [.36, .3], [.25, .46]].forEach(a => mk(rig, RNGF(), main, 0, a[1], 0, a[0], a[0], a[0] * .9, Math.PI / 2));
+    mk(rig, CYL(), main, 0, .88, 0, .17, .8, .17); mk(rig, CYL(), gold, 0, 1.0, 0, .185, .09, .185);
+    mk(rig, SPH(), main, 0, 1.27, -.14, .64, .56, .12); mk(rig, SPH(), light, 0, 1.2, -.05, .36, .44, .07);
+    for (let i = 0; i < 3; i++) mk(rig, BOX(), dark, 0, 1.05 + i * .13, .03, .5 - i * .06, .035, .03);
+    mk(rig, CON(), main, .52, .1, 0, .09, .34, .09, 0, 0, -1.2);
+  }
+  else if (sp === 7) { mk(rig, SPH(), bodyMat, 0, .72, 0, .46, .54, .42); for (let i = 0; i < 4; i++) mk(rig, RNG(), M('#cdbf9a'), 0, .42 + i * .19, 0, .43 - Math.abs(i - 1.3) * .05, .4 - Math.abs(i - 1.3) * .05, .5, Math.PI / 2 + (i % 2 ? .12 : -.12), 0, 0); mk(rig, SPH(), M(C, { metalness: .5, roughness: .3 }), 0, .86, .4, .1, .08, .05); armMat = bodyMat; }
+  else if (sp === 8) { const shell = M(C, { metalness: .55, roughness: .25 }); mk(rig, SPH(), shell, 0, .72, 0, .54, .56, .48); mk(rig, BOX(), black, 0, .72, -.47, .03, .9, .06); mk(rig, SPH(), M('#2a2030'), 0, .7, .22, .36, .4, .28); armMat = M('#231a2c'); bodyMat = armMat; [-1, 1].forEach(s => mk(rig, CAP(.05, .22), armMat, s * .52, .55, .1, 1, 1, 1, 0, 0, s * 1.1)); }
+  else if (sp === 12) { mk(rig, SPH(), main, 0, .72, 0, .56, .58, .5); mk(rig, SPH(), light, 0, .66, .24, .38, .42, .22); collar(1.1, .46); }
+  else if (sp === 5) { mk(rig, SPH(), white, 0, .78, 0, .42, .46, .44); mk(rig, CYL(), M('#23202c'), 0, 1.12, 0, .12, .3, .12); mk(rig, SPH(), black, 0, .62, -.4, .2, .22, .2); [-1, 1].forEach(s => { mk(rig, CYL(), M('#e08a3c'), s * .17, .2, 0, .035, .4, .035); mk(rig, SPH(), M('#e08a3c'), s * .17, .03, .1, .13, .04, .2); }); collar(1.0, .34); feet = false; armMat = white; }
+  else if (sp === 6) { animalBody(main, M('#f1e3a0')); for (let i = 0; i < 4; i++) mk(rig, CON(), dark, 0, 1.0 - i * .22, -.42 + (i > 1 ? .05 : 0), .08, .17, .08, -.6); }
+  else if (sp === 3) { animalBody(main, M(cl)); for (let i = 0; i < 5; i++) mk(rig, SPH(), dark, (i % 2 ? .1 : -.1) * (i % 3), .55 + i * .08, .385, .04, .03, .02); }
+  else if (sp === 14) { animalBody(main, null); for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283; mk(rig, SPH(), light, Math.cos(a) * .34, .72 + Math.sin(a * 2) * .14, Math.sin(a) * .3, .2, .2, .2); } }
+  else animalBody(main, light);
+  armMat = armMat || bodyMat;
+  // feet
+  if (feet) [-1, 1].forEach(s => { const fm = sp === 3 ? gold : (human || sp === 4 ? (sp === 4 ? main : skinD) : (sp === 7 ? bodyMat : (sp === 8 ? armMat : dark))); mk(rig, SPH(), fm, s * .2, .08, .12, .16, .09, .23); });
+  // arms
+  if (arms) [-1, 1].forEach(s => {
+    const pv = new T.Group(); pv.position.set(s * .47, 1.0, 0); rig.add(pv);
+    if (sp === 3 || sp === 5) { mk(pv, SPH(), sp === 5 ? white : main, s * .07, -.26, -.02, .1, .36, .26, 0, 0, s * .2); mk(pv, SPH(), sp === 5 ? black : dark, s * .1, -.5, -.04, .08, .16, .2, 0, 0, s * .2); }
+    else { mk(pv, CAP(.085, .26), armMat, 0, -.2, 0, 1, 1, 1); mk(pv, SPH(), armMat, 0, -.41, 0, .1, .1, .1); if (sp !== 7 && sp !== 8) mk(pv, CYL(), gold, 0, -.3, 0, .1, .07, .1); if (sp === 7 && s > 0) mk(pv, BOX(), M('#cdbf9a'), .05, -.6, 0, .07, .34, .02, 0, 0, .15); }
+    if (s < 0) parts.armL = pv; else parts.armR = pv;
+  });
+
+  /* ---------- face ---------- */
+  function eye(s, o) {
+    o = o || {}; const x = s * (o.x || H.ex), y = o.y === undefined ? H.ey : o.y, r = o.r || H.er;
+    const e = new T.Group(); e.position.set(x, y, onHead(x, y) - .035); e.rotation.y = s * .32; head.add(e);
+    if (o.glow) { mk(e, SPH(), M(o.glow, { emissive: o.glow, emissiveIntensity: 1.2 }), 0, 0, 0, r, r * 1.1, .08); mk(e, SPH(), black, 0, 0, .06, r * .35, r * .7, .04); }
+    else { mk(e, SPH(), white, 0, 0, 0, r, r * 1.14, .08); mk(e, SPH(), black, 0, -.005, .05, r * .56, r * .7, .05); mk(e, SPH(), white, -.03, .035, .09, r * .2, r * .2, .02); }
+    mk(e, BOX(), black, s * (r + .075), r * .25, .0, .17, .034, .04, 0, 0, s * .42);    // kohl wing
+    eyes.push(e); return e;
+  }
+  if (sp === 7) { eye(-1, { glow: '#' + C.clone().lerp(new T.Color('#ffffff'), .3).getHexString() }); mk(head, BOX(), M('#cdbf9a'), .22, .06, onHead(.22, .06) + .0, .46, .13, .05, 0, .3, -.25); }
+  else { eye(-1); eye(1); }
+  if (mouth) {
+    const my = H.mouth * (H.y / .55), mz = onHead(0, my) + .0;
+    const w = mood === 4 ? .13 : .1;
+    if (mood === 2) mk(head, TOR(), black, 0, my - .05, mz, w, .07, .06);
+    else if (mood === 0) mk(head, TOR(), black, .04, my, mz, w, .08, .06, 0, 0, Math.PI + .2);
+    else mk(head, TOR(), black, 0, my, mz, w, mood === 4 ? .1 : .07, .06, 0, 0, Math.PI);
+  }
+  if (cheeks) [-1, 1].forEach(s => { const x = s * H.x * .62, y = -.12; mk(head, SPH(), M('#f0786e', { transparent: true, opacity: mood === 1 ? .85 : .5 }), x, y, onHead(x, y) - .02, mood === 1 ? .11 : .08, .055, .03, 0, s * .5, 0); });
+  if (mood === 2 && sp !== 7) [-1, 1].forEach(s => { const x = s * H.ex; mk(head, BOX(), black, x, H.ey + H.er * 1.75, onHead(x, H.ey + .2) + .02, .22, .05, .05, 0, s * .3, s * -.45); });
+  if (mood === 3) [-1, 1].forEach(s => { const x = s * H.ex, e = eyes[s < 0 ? 0 : (eyes.length - 1)]; if (e && sp !== 7) mk(e, HEM(), headMat, 0, .01, .0, H.er * 1.12, H.er * 1.3, .1, Math.PI / 2 - .25); });
+  if (human) { mk(head, SPH(), skinD, 0, -.07, onHead(0, -.07), .05, .05, .04); [-1, 1].forEach(s => mk(head, SPH(), skin, s * H.x * .98, -.02, 0, .08, .12, .07)); }
+
+  function nemes(col) {
+    const nm = M(col), st = gold;
+    mk(head, HEM(), nm, 0, .08, -.03, .665, .55, .63);
+    [-1, 1].forEach(s => { mk(head, SPH(), nm, s * .56, -.16, -.08, .25, .52, .36, 0, 0, s * .12); for (let i = 0; i < 3; i++) mk(head, BOX(), st, s * .66, .08 - i * .2, .1, .03, .045, .36, 0, 0, s * .12);
+      mk(head, BOX(), nm, s * .4, -.74, .3, .2, .46, .1); for (let i = 0; i < 3; i++) mk(head, BOX(), st, s * .4, -.6 - i * .13, .355, .2, .04, .02); });
+    mk(head, BOX(), nm, 0, -.3, -.42, .9, .7, .14);
+    mk(head, RNG(), st, 0, .12, -.03, .665, .625, .5, Math.PI / 2);
+    mk(head, CAP(.045, .12), st, 0, .27, onHead(0, .27) + .06, 1, 1, 1, -.3); mk(head, SPH(), st, 0, .4, onHead(0, .4) + .1, .07, .08, .06);
+    H.top = .62;
+  }
+  function whiskers() { [-1, 1].forEach(s => { for (let i = -1; i <= 1; i++) mk(head, BOX(), white, s * .5, -.14 + i * .06, onHead(.42, -.14) - .02, .26, .013, .013, 0, s * -.3, s * i * .16); }); }
+  function tail(tip, long) { const t = new T.Group(); t.position.set(0, .45, -.4); rig.add(t); mk(t, CAP(.06, long || .55), bodyMat, 0, .28, -.12, 1, 1, 1, -.55); mk(t, SPH(), tip, 0, .6, -.32, .11, .12, .11); parts.tail = t; }
+
   switch (sp) {
-    case 0: // cat
-      [-1, 1].forEach(s => { mk(head, CON(), skin, s * .38, hy2 + .08, 0, .17, .36, .12, 0, 0, -s * .3); mk(head, CON(), pink, s * .375, hy2 + .06, .05, .09, .22, .05, 0, 0, -s * .3); for (let i = -1; i <= 1; i++) mk(head, BOX(), white, s * .55, -.12 + i * .06, .38, .26, .012, .012, 0, i * .25 * s, s * -i * .12); });
-      mk(head, SPH(), pink, 0, -.08, .6, .05, .035, .03);
-      parts.tail = new T.Group(); parts.tail.position.set(0, .5, -.4); rig.add(parts.tail); mk(parts.tail, CAP(.08, .6), skin, 0, .3, -.1, 1, 1, 1, -.5, 0, 0); mk(parts.tail, SPH(), dark, 0, .62, -.3, .1, .1, .1);
+    case 0: nemes(spec.c || '#2456b8'); mk(head, BOX(), lapis, 0, -.63, .36, .09, .22, .09); mk(head, BOX(), gold, 0, -.74, .36, .1, .04, .1); break;
+    case 1:
+      mk(head, HEM(), hair, 0, .07, -.03, .64, .5, .6);
+      mk(head, FLARE(), main, 0, .78, -.1, .52, .66, .5, -.16); mk(head, CYL(), gold, 0, .5, -.05, .385, .07, .37, -.16); mk(head, CYL(), gold, 0, .84, -.11, .46, .06, .44, -.16);
+      mk(head, CAP(.04, .1), gold, 0, .52, .36, 1, 1, 1, -.3);
+      [-1, 1].forEach(s => { mk(head, SPH(), gold, s * .6, -.2, .02, .07, .07, .07); mk(head, SPH(), hair, s * .52, -.05, -.12, .14, .3, .3); });
       break;
-    case 1: // bear
-      [-1, 1].forEach(s => { mk(head, SPH(), skin, s * .45, hy2 - .03, 0, .2, .2, .13); mk(head, SPH(), light, s * .45, hy2 - .03, .06, .11, .11, .06); });
-      mk(head, SPH(), light, 0, -.12, .46, .24, .19, .16); mk(head, SPH(), black, 0, -.03, .6, .08, .06, .05);
+    case 13:
+      mk(head, HEM(), hair, 0, .08, -.03, .665, .56, .63); [-1, 1].forEach(s => mk(head, SPH(), hair, s * .54, -.2, -.06, .2, .44, .4)); mk(head, BOX(), hair, 0, -.25, -.4, .9, .6, .2);
+      mk(head, RNG(), main, 0, .2, -.03, .67, .63, .6, Math.PI / 2);
+      if (parts.armR) { mk(parts.armR, CYL(), M('#f0e2b6'), .0, -.46, .14, .075, .42, .075, 0, 0, Math.PI / 2); [-1, 1].forEach(s => mk(parts.armR, CYL(), M('#a8733a'), s * .22, -.46, .14, .09, .04, .09, 0, 0, Math.PI / 2)); }
+      mk(head, CYL(), M('#a8733a'), .62, .12, .1, .018, .5, .018, 1.2, 0, 0);
+      H.top = .62; break;
+    case 15:
+      mk(head, HEM(), main, 0, .08, -.03, .665, .56, .63); mk(head, BOX(), main, 0, -.22, -.42, .86, .6, .14); mk(head, RNG(), white, 0, .14, -.03, .665, .625, .5, Math.PI / 2);
+      [-1, 1].forEach(s => { mk(head, SPH(), main, s * .55, -.12, -.1, .18, .4, .34); mk(rig, BOX(), main, 0, .82, .345, .09, .5, .04, 0, 0, s * .75); });
+      mk(rig, SPH(), main, -.66, .68, .22, .34, .46, .07); mk(rig, SPH(), gold, -.66, .68, .29, .1, .1, .05); mk(rig, RNG(), gold, -.66, .68, .25, .3, .42, .5);
+      mk(rig, CYL(), M('#8a5a2a'), .68, .9, .1, .028, 1.8, .028); mk(rig, CON(), gold, .68, 1.92, .1, .075, .26, .03);
+      H.top = .62; break;
+    case 2:
+      [-1, 1].forEach(s => { mk(head, CON(), main, s * .36, H.y + .08, 0, .17, .38, .12, 0, 0, -s * .28); mk(head, CON(), gold, s * .355, H.y + .05, .05, .09, .22, .05, 0, 0, -s * .28); });
+      mk(head, RNG(), gold, .5, H.y + .02, .02, .075, .075, 1); mk(head, SPH(), light, 0, -.14, onHead(0, -.14) - .06, .17, .12, .1); mk(head, SPH(), M('#e8788a'), 0, -.09, onHead(0, -.09) + .03, .045, .035, .03);
+      whiskers(); tail(dark, .7); break;
+    case 3:
+      mk(head, HEM(), main, 0, .1, -.02, .62, .5, .58);
+      mk(head, CON(), gold, 0, -.12, onHead(0, -.1) + .1, .12, .3, .12, 2.15); mk(head, SPH(), black, 0, -.24, onHead(0, -.1) + .2, .04, .04, .04);
+      [-1, 1].forEach(s => { const x = s * (H.ex + .02); mk(head, BOX(), black, x, -.13, onHead(x, -.13), .05, .2, .04, 0, s * .3, s * .15); mk(head, BOX(), black, x + s * .07, -.22, onHead(x + s * .07, -.22), .14, .045, .04, 0, s * .4, s * .5); });
+      for (let i = -1; i <= 1; i++) mk(rig, BOX(), dark, i * .13, .4, -.44, .12, .42, .04, .5, 0, i * .2);
       break;
-    case 2: // robot
-      mk(head, CYL(), M('#6b7a90', { metalness: .6 }), .3, .52, 0, .03, .22, .03); mk(head, SPH(), M('#ff5252', { emissive: '#ff1744', emissiveIntensity: .8 }), .3, .76, 0, .08, .08, .08);
-      [-1, 1].forEach(s => mk(head, CYL(), M('#6b7a90', { metalness: .6 }), s * .55, 0, 0, .09, .13, .09, 0, 0, Math.PI / 2));
-      mk(rig, BOX(), M('#6b7a90', { metalness: .6 }), 0, 1.18, 0, .3, .12, .3);
-      mk(rig, BOX(), M('#7df9ff', { emissive: '#3cd8ff', emissiveIntensity: .8 }), 0, .78, .32, .22, .22, .02);
+    case 4:
+      [-1, 1].forEach(s => { const e = new T.Group(); e.position.set(s * .3, H.y - .06, -.02); e.rotation.z = -s * .12; head.add(e); mk(e, CON(), main, 0, .34, 0, .14, .62, .1); mk(e, CON(), gold, 0, .3, .05, .075, .42, .04); parts['ear' + (s < 0 ? 'L' : 'R')] = e; });
+      mk(head, SPH(), main, 0, -.15, .46, .2, .17, .36); mk(head, SPH(), light, 0, -.2, .5, .15, .1, .3); mk(head, SPH(), black, 0, -.1, .8, .065, .055, .05);
+      mk(head, TOR(), black, 0, -.24, .78, .07, .05, .06, 0, 0, Math.PI);
+      tail(dark, .45); H.top = .5; break;
+    case 5:
+      mk(head, TOR(), M('#23202c'), 0, -.42, .4, .36, .36, .9, 0, Math.PI / 2, 0);
+      H.top = .48; break;
+    case 6:
+      mk(head, SPH(), main, 0, -.12, .5, .32, .19, .46); mk(head, SPH(), M('#f1e3a0'), 0, -.2, .5, .28, .1, .42);
+      [-1, 1].forEach(s => { mk(head, SPH(), main, s * H.ex, H.ey + .03, onHead(s * H.ex, H.ey) - .16, .17, .17, .17); mk(head, SPH(), dark, s * .1, -.0, .9, .045, .04, .045); for (let i = 0; i < 4; i++) mk(head, CON(), white, s * .25 * (1 - i * .07), -.25, .45 + i * .13, .035, .1, .035, Math.PI); });
+      for (let i = 0; i < 3; i++) mk(head, CON(), dark, 0, H.y - .04 - i * .05, -.1 - i * .17, .07, .14, .07, -.4);
+      { const t = new T.Group(); t.position.set(0, .4, -.4); rig.add(t); mk(t, CON(), main, 0, -.05, -.34, .2, .72, .2, -1.35); for (let i = 0; i < 3; i++) mk(t, CON(), dark, 0, .1 - i * .05, -.2 - i * .2, .06, .14, .06, -.3); parts.tail = t; }
+      H.top = .46; break;
+    case 7:
+      for (let i = 0; i < 5; i++) mk(head, RNG(), M('#cdbf9a'), 0, .36 - i * .17, 0, H.x * Math.sqrt(Math.max(.1, 1 - Math.pow((.36 - i * .17) / H.y, 2))) + .012, H.z * Math.sqrt(Math.max(.1, 1 - Math.pow((.36 - i * .17) / H.y, 2))) + .012, .55, Math.PI / 2 + (i % 2 ? .1 : -.1), 0, i % 2 ? .08 : -.08);
+      mk(head, BOX(), M('#cdbf9a'), -.3, H.y - .02, -.2, .08, .3, .02, 0, 0, .5);
       break;
-    case 3: // dragon
-      [-1, 1].forEach(s => { mk(head, CON(), M('#fff1c2'), s * .28, hy2 + .1, -.05, .1, .34, .1, -.25, 0, -s * .3); });
-      mk(head, SPH(), light, 0, -.14, .44, .26, .2, .2); [-1, 1].forEach(s => mk(head, SPH(), dark, s * .08, -.07, .62, .03, .03, .02));
-      for (let i = 0; i < 4; i++) mk(rig, CON(), M('#ffd24a'), 0, 1.0 - i * .22, -.44 + (i > 1 ? .04 : 0), .09 - i * .008, .17, .09, -.6, 0, 0);
-      [-1, 1].forEach(s => { const w = new T.Group(); w.position.set(s * .5, 1.0, -.25); rig.add(w); mk(w, SPH(), M(C.clone().lerp(new T.Color('#ff7aa8'), .5)), s * .28, .18, 0, .34, .26, .03, 0, s * .3, s * -.5); w.userData.wing = s; if (s < 0) parts.wingL = w; else parts.wingR = w; });
-      parts.tail = new T.Group(); parts.tail.position.set(0, .4, -.42); rig.add(parts.tail); mk(parts.tail, CON(), skin, 0, -.05, -.3, .15, .6, .15, -1.3, 0, 0); mk(parts.tail, CON(), M('#ffd24a'), 0, -.08, -.62, .1, .16, .1, -1.3, 0, 0);
+    case 8:
+      [-1, 1].forEach(s => { mk(head, CON(), headMat, s * .2, H.y + .1, .1, .05, .26, .05, .2, 0, -s * .5); });
+      mk(head, SPH(), M('#ff8a2a', { emissive: '#ff5a00', emissiveIntensity: 1.1 }), 0, H.y + .46, 0, .3, .3, .3); mk(head, RNG(), gold, 0, H.y + .46, 0, .32, .32, .6);
       break;
-    case 4: // bunny
-      [-1, 1].forEach(s => { const e = new T.Group(); e.position.set(s * .27, hy2 + .02, 0); e.rotation.z = -s * .22; head.add(e); mk(e, CAP(.13, .5), skin, 0, .4, 0, 1, 1, .8); mk(e, CAP(.07, .4), pink, 0, .4, .07, 1, 1, .5); parts['ear' + (s < 0 ? 'L' : 'R')] = e; });
-      mk(head, SPH(), pink, 0, -.08, .6, .05, .04, .03);
-      mk(rig, SPH(), white, 0, .5, -.45, .16, .16, .16);
+    case 9:
+      for (let i = 0; i < 11; i++) { const a = (i / 11) * 6.283; mk(head, SPH(), dark, Math.cos(a) * .56, Math.sin(a) * .5, -.16, .2, .2, .16); }
+      [-1, 1].forEach(s => { mk(head, SPH(), main, s * .42, H.y - .04, .02, .17, .17, .1); mk(head, SPH(), light, s * .42, H.y - .04, .07, .09, .09, .05); mk(head, SPH(), light, s * .09, -.17, onHead(.09, -.17) - .04, .12, .1, .1); });
+      mk(head, CON(), M('#5a3020'), 0, -.09, onHead(0, -.09) + .03, .06, .06, .04, Math.PI);
+      whiskers(); tail(dark, .6); break;
+    case 10:
+      nemes(spec.c || '#2456b8'); mk(head, CON(), M('#5a3020'), 0, -.08, onHead(0, -.08) + .03, .055, .055, .04, Math.PI);
+      whiskers(); { bodyMat = M('#dba95a'); tail(M('#8a5a28'), .6); }
+      [-1, 1].forEach(s => mk(rig, SPH(), M('#dba95a'), s * .26, .1, .3, .17, .11, .22));
       break;
-    case 5: // owl
-      [-1, 1].forEach(s => mk(head, CON(), dark, s * .38, hy2 + .02, 0, .12, .28, .1, 0, 0, -s * .35));
-      mk(head, CON(), orange, 0, -.08, .62, .1, .2, .08, Math.PI / 2, 0, 0);
-      [-1, 1].forEach(s => mk(rig, SPH(), dark, s * .52, .85, -.02, .13, .36, .26, 0, 0, s * -.15));
-      mk(rig, SPH(), light, 0, .78, .22, .32, .34, .2);
-      [-1, 1].forEach(s => mk(rig, SPH(), orange, s * .2, .08, .18, .18, .07, .26));
+    case 11:
+      mk(head, BOX(), red, 0, -.18, H.z + .1, .035, .02, .24); [-1, 1].forEach(s => mk(head, BOX(), red, s * .035, -.18, H.z + .24, .025, .02, .1, 0, s * .5, 0));
+      mk(head, SPH(), dark, 0, H.y - .03, -.05, .2, .08, .2);
       break;
-    case 6: // ghost
-      mk(head, SPH(), M('#ff9ec0', { transparent: true, opacity: .6 }), -.42, -.08, .42, .1, .06, .03);
-      break;
-    case 7: // alien
-      [-1, 1].forEach(s => { mk(head, CYL(), skin, s * .28, hy2 + .15, 0, .03, .3, .03, 0, 0, -s * .35); mk(head, SPH(), M('#ffe066', { emissive: '#ffb300', emissiveIntensity: .8 }), s * .39, hy2 + .32, 0, .08, .08, .08); });
-      for (let i = 0; i < 3; i++) mk(head, SPH(), dark, (i - 1) * .17, .42, .35, .04, .03, .03);
-      break;
-    case 8: // frog
-      mk(rig, SPH(), light, 0, .64, .2, .3, .3, .2);
-      for (let i = 0; i < 3; i++) mk(head, SPH(), dark, (i - 1) * .22, .26, -.2, .06, .04, .06);
-      break;
-    case 9: // penguin
-      mk(head, CON(), orange, 0, -.07, .6, .1, .2, .08, Math.PI / 2, 0, 0);
-      mk(head, SPH(), white, 0, -.05, .42, .38, .32, .2);
-      [-1, 1].forEach(s => mk(head, SPH(), white, s * .21, .06, .55, .001, .001, .001));
-      break;
-    case 10: // mushroom
-      mk(head, HEM(), skin, 0, .12, 0, .88, .62, .88);
-      for (let i = 0; i < 6; i++) { const a = i * 1.05, r = .6 - (i % 2) * .2; mk(head, SPH(), white, Math.cos(a) * r * .8, .32 + (i % 2) * .12 + .1, Math.sin(a) * r * .8 + .1, .1, .04, .1); }
-      mk(head, SPH(), light, 0, -.38, 0, .0001);
-      break;
-    case 12: // octopus
-      for (let i = 0; i < 6; i++) { const a = (i / 6) * 6.283; const t = new T.Group(); t.position.set(Math.cos(a) * .3, .55, Math.sin(a) * .28); t.rotation.set(Math.sin(a) * .5, 0, -Math.cos(a) * .5); rig.add(t); mk(t, CAP(.1, .5), skin, 0, -.25, 0, 1, 1, 1); mk(t, SPH(), light, 0, -.55, 0, .09, .09, .09); }
-      for (let i = 0; i < 4; i++) mk(head, SPH(), light, (i - 1.5) * .22, .45, .2, .06, .04, .06);
-      break;
-    case 13: // cactus
-      mk(head, SPH(), M('#ff5fa2'), 0, hy2 + .02, 0, .16, .12, .16); for (let i = 0; i < 5; i++) { const a = i * 1.256; mk(head, SPH(), M('#ff8fc2'), Math.cos(a) * .17, hy2 + .04, Math.sin(a) * .17, .11, .08, .11); }
-      mk(head, SPH(), M('#ffe066'), 0, hy2 + .1, 0, .07, .07, .07);
-      break;
-    case 14: // slime
-      mk(rig, SPH(), M(C, { transparent: true, opacity: .86, roughness: .15 }), 0, .3, 0, .62, .38, .56);
-      mk(rig, SPH(), light, .2, .55, .2, .1, .06, .05);
-      head.position.y = .55;
-      break;
-    case 15: // knight
-      mk(head, HEM(), M('#aab4c4', { metalness: .75, roughness: .28 }), 0, .02, 0, .66, .6, .64);
-      mk(head, BOX(), M('#aab4c4', { metalness: .75, roughness: .28 }), 0, .0, .0, 1.34, .08, 1.2);
-      mk(head, CAP(.06, .4), M('#ff4d6d'), 0, hy2 + .22, -.05, 1, 1, 1, -.5, 0, 0);
-      mk(rig, BOX(), M('#6a4a2a'), -.72, .6, .1, .05, .5, .05, 0, 0, .15); mk(rig, BOX(), M('#d8dde6', { metalness: .8 }), -.72, .98, .1, .06, .45, .02, 0, 0, .15);
-      mk(rig, HEM(), M('#3b82f6', { metalness: .3 }), .62, .8, .18, .26, .3, .06, Math.PI / 2, 0, 0);
-      break;
+    case 12:
+      mk(head, SPH(), light, 0, -.2, .36, .5, .33, .4);
+      [-1, 1].forEach(s => { mk(head, SPH(), dark, s * .17, -.06, .7, .055, .045, .05); mk(head, BOX(), white, s * .2, -.5, .56, .09, .12, .07); mk(head, SPH(), main, s * .46, H.y - .02, -.05, .11, .12, .08); mk(head, SPH(), main, s * H.ex, H.ey + .02, onHead(s * H.ex, H.ey) - .17, .17, .17, .17); });
+      mk(head, TOR(), black, 0, -.3, .73, .2, .08, .08, 0, 0, Math.PI);
+      H.top = .52; break;
+    case 14:
+      [-1, 1].forEach(s => { mk(head, RNGF(), M('#b8863a', { roughness: .45 }), s * .6, .08, -.06, .25, .25, .34, 0, Math.PI / 2, 0); mk(head, SPH(), main, s * .5, -.14, .1, .1, .07, .18, 0, s * .5, s * .5); });
+      mk(head, SPH(), light, 0, -.16, onHead(0, -.16) - .1, .22, .19, .2); mk(head, SPH(), M('#5a3020'), 0, -.1, onHead(0, -.1) + .08, .06, .045, .04);
+      for (let i = 0; i < 5; i++) mk(head, SPH(), light, (i - 2) * .17, H.y - .05 + (i % 2) * .04, 0, .17, .15, .17);
+      H.top = .6; break;
   }
-  // ---- hats ----
-  let hat = spec.hat | 0;
-  if (NOHAT.includes(sp) || sp === 11) hat = 0;
-  const top = hy2 + (sp === 14 ? 0 : .02);
-  const hx2 = hx * .9;
-  const hatM = M(spec.hc || '#6c5ce7');
-  if (hat === 1 || spec.boss && hat === 0 && !NOHAT.includes(sp)) { // crown
-    const cr = new T.Group(); cr.position.set(0, top + .02, 0); head.add(cr);
-    mk(cr, CYL(), gold, 0, .08, 0, .3, .16, .3);
-    for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; mk(cr, CON(), gold, Math.cos(a) * .27, .24, Math.sin(a) * .27, .07, .16, .07); mk(cr, SPH(), M(['#ff5252', '#4dd0e1', '#69f0ae', '#ff80ab', '#b388ff'][i]), Math.cos(a) * .27, .34, Math.sin(a) * .27, .045, .045, .045); }
-  } else if (hat === 2) { // wizard
-    const h = new T.Group(); h.position.set(0, top, 0); head.add(h);
-    mk(h, CYL(), M('#3b2a7a'), 0, .02, 0, .5, .04, .5); mk(h, CON(), M('#4b36a0'), 0, .3, 0, .32, .6, .32, 0, 0, .15); mk(h, SPH(), gold, .05, .62, 0, .06, .06, .06);
-  } else if (hat === 3) { // cap
-    const h = new T.Group(); h.position.set(0, top - .12, 0); head.add(h);
-    mk(h, HEM(), hatM, 0, 0, 0, .62, .46, .62); mk(h, CYL(), hatM, 0, .0, .52, .3, .03, .22);
-  } else if (hat === 4) { // top hat
-    const h = new T.Group(); h.position.set(0, top, 0); head.add(h);
-    mk(h, CYL(), M('#222'), 0, .02, 0, .48, .04, .48); mk(h, CYL(), M('#222'), 0, .22, 0, .3, .4, .3); mk(h, CYL(), M('#e63946'), 0, .1, 0, .31, .06, .31);
-  } else if (hat === 5) { // party
-    const h = new T.Group(); h.position.set(0, top - .02, 0); h.rotation.z = -.15; head.add(h);
-    mk(h, CON(), M('#ff4d8d'), 0, .28, 0, .24, .56, .24); mk(h, SPH(), M('#ffe066'), 0, .58, 0, .08, .08, .08);
-    for (let i = 0; i < 3; i++) mk(h, RNG(), M('#ffffff'), 0, .12 + i * .13, 0, .17 - i * .04, .17 - i * .04, .5, Math.PI / 2, 0, 0);
-  } else if (hat === 6) { // helmet
-    const h = new T.Group(); h.position.set(0, top - .14, 0); head.add(h);
-    mk(h, HEM(), M('#8aa0b8', { metalness: .75, roughness: .3 }), 0, 0, 0, .68, .6, .66); mk(h, BOX(), M('#e63946'), 0, .55, -.05, .06, .14, .6);
-  } else if (hat === 7) { // headband
-    mk(head, RNG(), M('#e63946'), 0, top - .18, 0, hx2 * .96, hz * .96, .18, Math.PI / 2, 0, 0);
-    mk(head, SPH(), M('#e63946'), .5, top - .2, -.2, .1, .1, .1);
-  } else if (hat === 8) { // flower / halo
-    mk(head, RNG(), M('#fff3a3', { emissive: '#ffd54f', emissiveIntensity: .8 }), 0, top + .22, 0, .3, .3, .5, Math.PI / 2, 0, 0);
+
+  /* ---------- crowns (unlockable) ---------- */
+  let hat = spec.hat | 0; if (NOHAT.includes(sp)) hat = 0;
+  if (spec.boss && !NOHAT.includes(sp)) hat = 1;
+  if (hat) {
+    const h = new T.Group(); h.position.set(0, H.top - .06, -.02); head.add(h);
+    const r = Math.min(.44, H.x * .68);
+    if (hat === 1) { mk(h, FLARE(), red, 0, .2, 0, r, .4, r); mk(h, BOX(), red, 0, .5, -r * .8, .16, .5, .07, -.12); mk(h, SPH(), white, 0, .46, .02, r * .6, .46, r * .6); mk(h, SPH(), white, 0, .9, .02, r * .3, .14, r * .3); mk(h, CAP(.03, .1), gold, 0, .16, r + .03, 1, 1, 1, -.3); mk(h, SPH(), gold, 0, .27, r + .07, .05, .06, .05); }
+    else if (hat === 2) { mk(h, SPH(), lapis, 0, .28, -.02, r * 1.04, .5, r); for (let i = 0; i < 9; i++) { const a = i * .7; mk(h, SPH(), gold, Math.cos(a) * r * .85, .22 + (i % 3) * .14, Math.sin(a) * r * .8, .035, .035, .035); } mk(h, CYL(), gold, 0, .04, 0, r * 1.02, .07, r * .98); mk(h, CAP(.03, .1), gold, 0, .14, r + .0, 1, 1, 1, -.3); }
+    else if (hat === 3) { mk(h, RNG(), gold, 0, -.12, 0, H.x * .9, H.z * .9, .55, Math.PI / 2); mk(h, CAP(.04, .16), gold, 0, .1, H.z * .86, 1, 1, 1, -.25); mk(h, SPH(), gold, 0, .25, H.z * .9, .07, .08, .06); mk(h, SPH(), red, 0, .0, H.z * .95, .05, .05, .04); }
+    else if (hat === 4) { mk(h, SPH(), M('#ff8a2a', { emissive: '#ff5a00', emissiveIntensity: 1 }), 0, .4, 0, .32, .32, .08); mk(h, RNG(), gold, 0, .4, 0, .33, .33, .7); mk(h, CYL(), gold, 0, .06, 0, .12, .12, .1); }
+    else if (hat === 5) { for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283; mk(h, CON(), M(i % 2 ? '#ff9ec4' : '#fff0f6'), Math.cos(a) * .14, .22, Math.sin(a) * .14, .1, .42, .1, Math.sin(a) * .5, 0, -Math.cos(a) * .5); } mk(h, SPH(), M('#ffd24a'), 0, .16, 0, .1, .1, .1); mk(h, CYL(), M('#3fa35a'), 0, .04, 0, .16, .08, .16); }
+    else if (hat === 6) { mk(h, RNG(), red, 0, -.12, 0, H.x * .9, H.z * .9, .5, Math.PI / 2); mk(h, SPH(), white, .0, .5, -.05, .13, .46, .035, 0, 0, -.12); mk(h, BOX(), M('#bfc8d8'), 0, .5, -.05, .02, .86, .04, 0, 0, -.12); }
+    else if (hat === 7) { mk(h, SPH(), white, 0, .42, 0, r * .6, .5, r * .6); mk(h, SPH(), white, 0, .9, 0, r * .28, .13, r * .28); [-1, 1].forEach(s => { mk(h, SPH(), M('#5fc7b8'), s * r * .95, .45, 0, .1, .44, .03, 0, 0, -s * .18); }); mk(h, CYL(), gold, 0, .06, 0, r * .9, .08, r * .86); }
+    else if (hat === 8) { [-1, 1].forEach(s => mk(h, CON(), M('#2b2230'), s * .3, .34, 0, .07, .6, .07, 0, 0, s * .22)); mk(h, SPH(), M('#ff8a2a', { emissive: '#ff5a00', emissiveIntensity: 1 }), 0, .36, 0, .24, .24, .07); mk(h, CYL(), gold, 0, .05, 0, .26, .08, .12); }
   }
-  if (spec.boss) { // cape + aura
-    const cp = mk(rig, BOX(), M('#c1121f', { side: T.DoubleSide }), 0, .8, -.46, .95, 1.0, .05, .12, 0, 0);
-    mk(g, RNG(), M('#ff4d4d', { emissive: '#ff1744', emissiveIntensity: .9, transparent: true, opacity: .85 }), 0, .02, 0, .95, .95, .05, Math.PI / 2, 0, 0);
+  if (spec.boss) {
+    mk(rig, BOX(), M('#b3151f', { side: T.DoubleSide }), 0, .74, -.47, 1.0, 1.05, .05, .12);
+    mk(rig, BOX(), gold, 0, 1.2, -.44, 1.0, .07, .06, .12);
+    mk(g, RNG(), M('#ffcf4a', { emissive: '#ff9a00', emissiveIntensity: 1, metalness: .4 }), 0, .02, 0, .98, .98, .6, Math.PI / 2);
   }
-  // shadows blob handled by renderer; scale
   g.userData = parts;
-  g.userData.base = { rigY: 0 };
-  if (spec.boss) g.scale.setScalar(1.22);
+  if (spec.boss) g.scale.setScalar(1.2);
   return g;
 }
 
-// animation state machine; call tick(ch, now(sec), dt)
 function newAnim(g) { return { g, mode: 'idle', t: 0, dur: 0, ph: Math.random() * 6, blink: 2 + Math.random() * 2, bl: 0 }; }
 function react(a, kind) {
   if (a.mode === 'fall' && kind !== 'reset') return;
@@ -452,23 +451,21 @@ function react(a, kind) {
 function tick(a, tm, dt) {
   const u = a.g.userData, rig = u.rig, head = u.head; a.t += dt;
   const k = a.dur > 0 ? Math.min(1, a.t / a.dur) : 0;
-  let by = Math.sin(tm * 2.3 + a.ph) * .03, sy = 1 + Math.sin(tm * 2.3 + a.ph) * .022, hz = Math.sin(tm * 1.4 + a.ph) * .05, hx = 0;
-  let al = Math.sin(tm * 2.3 + a.ph) * .08, ar = -al, gx = 0, gz = 0, jump = 0, spin = 0;
+  let by = Math.sin(tm * 2.3 + a.ph) * .025, sy = 1 + Math.sin(tm * 2.3 + a.ph) * .02, hz = Math.sin(tm * 1.4 + a.ph) * .045, hx = 0;
+  let al = Math.sin(tm * 2.3 + a.ph) * .08, ar = -al, gx = 0, gz = 0, jump = 0;
   if (a.mode === 'cheer') { jump = Math.abs(Math.sin(k * Math.PI * 4)) * .42; al = -(2.6 + Math.sin(tm * 20) * .25); ar = (2.6 + Math.sin(tm * 20 + 1) * .25); sy = 1 + Math.sin(k * Math.PI * 8) * .06; if (k >= 1) a.mode = 'idle'; }
   else if (a.mode === 'hit') { gz = Math.sin(k * Math.PI * 7) * .22 * (1 - k); gx = -.25 * Math.sin(k * Math.PI); sy = 1 - .12 * Math.sin(k * Math.PI); if (k >= 1) a.mode = 'idle'; }
-  else if (a.mode === 'sad') { hx = .5 * Math.min(1, k * 4); sy = .93; al = .3; ar = -.3; by = -.02; gz = Math.sin(tm * 30) * .02 * (1 - k); if (k >= 1) a.mode = 'idle'; }
-  else if (a.mode === 'taunt') { hz = Math.sin(k * Math.PI * 6) * .25; al = -(1.2 + Math.sin(tm * 14) * .3); jump = Math.max(0, Math.sin(k * Math.PI * 3)) * .15; if (k >= 1) a.mode = 'idle'; }
-  else if (a.mode === 'fall') { const f = Math.min(1, a.t / .6); gx = -1.45 * f * f; jump = -.0; spin = 0; al = -1.4 * f; ar = 1.4 * f; hz = Math.sin(tm * 6) * .12; sy = 1; by = 0; }
+  else if (a.mode === 'sad') { hx = .45 * Math.min(1, k * 4); sy = .93; al = .3; ar = -.3; by = -.02; gz = Math.sin(tm * 30) * .02 * (1 - k); if (k >= 1) a.mode = 'idle'; }
+  else if (a.mode === 'taunt') { hz = Math.sin(k * Math.PI * 6) * .22; al = -(1.2 + Math.sin(tm * 14) * .3); jump = Math.max(0, Math.sin(k * Math.PI * 3)) * .15; if (k >= 1) a.mode = 'idle'; }
+  else if (a.mode === 'fall') { const f = Math.min(1, a.t / .6); gx = -1.45 * f * f; al = -1.4 * f; ar = 1.4 * f; hz = Math.sin(tm * 6) * .12; sy = 1; by = 0; }
   rig.position.y = by + jump; rig.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
   head.rotation.z = hz; head.rotation.x = hx;
   u.g.rotation.x = gx; u.g.rotation.z = gz;
   if (u.armL) u.armL.rotation.z = al; if (u.armR) u.armR.rotation.z = ar;
   if (u.tail) u.tail.rotation.y = Math.sin(tm * 5 + a.ph) * .5;
-  if (u.wingL) { u.wingL.rotation.z = Math.sin(tm * 6 + a.ph) * .15; u.wingR.rotation.z = -Math.sin(tm * 6 + a.ph) * .15; }
-  if (u.earL) { u.earL.rotation.z = .22 + Math.sin(tm * 2 + a.ph) * .06; u.earR.rotation.z = -.22 - Math.sin(tm * 2.2 + a.ph) * .06; }
-  // blink
+  if (u.earL) { u.earL.rotation.z = .12 + Math.sin(tm * 2 + a.ph) * .06; u.earR.rotation.z = -.12 - Math.sin(tm * 2.2 + a.ph) * .06; }
   a.blink -= dt; if (a.blink <= 0) { a.bl = .14; a.blink = 2 + Math.random() * 3; }
-  let ey = 1; if (a.bl > 0) { a.bl -= dt; ey = .1; } if (a.mode === 'fall') ey = .2;
+  let ey = 1; if (a.bl > 0) { a.bl -= dt; ey = .12; } if (a.mode === 'fall') ey = .2;
   u.eyes.forEach(e => e.scale.y = ey);
 }
 root.CHAR3D = { make, newAnim, react, tick, HEROES, NOHAT };
@@ -489,29 +486,38 @@ function create(wrap, onPick) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.outputColorSpace = T.SRGBColorSpace;
+  renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   const cv = renderer.domElement;
   cv.style.cssText = 'width:100%;height:100%;display:block;touch-action:manipulation;outline:none';
   wrap.appendChild(cv);
 
   const scene = new T.Scene();
-  const cam = new T.PerspectiveCamera(36, 1, 0.1, 100);
-  scene.add(new T.HemisphereLight(0xffffff, 0x556677, .95));
-  const sun = new T.DirectionalLight(0xffffff, 2.1);
+  const cam = new T.PerspectiveCamera(27, 1, 0.1, 140);
+  try { scene.environment = root.V3D_env(renderer); } catch (e) {}
+  scene.add(new T.HemisphereLight(0xfff4dc, 0x6a5a48, .5));
+  const sun = new T.DirectionalLight(0xfff1d6, 2.0);
   sun.position.set(4, 11, 6); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 30;
   sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
   scene.add(sun);
-  const fill = new T.DirectionalLight(0xbfd8ff, 0.7); fill.position.set(-6, 6, -5); scene.add(fill);
+  const fill = new T.DirectionalLight(0xbfd8ff, 0.45); fill.position.set(-6, 6, -5); scene.add(fill);
 
+  function outlineMat(col, w) {
+    const m = new T.ShaderMaterial({ uniforms: { c: { value: new T.Color(col) }, w: { value: w } }, side: T.BackSide,
+      vertexShader: 'uniform float w;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vec3 n=normalize(normalMatrix*normal);mv.xyz+=n*w;gl_Position=projectionMatrix*mv;}',
+      fragmentShader: 'uniform vec3 c;void main(){gl_FragColor=vec4(c,1.0);}' });
+    m.color = m.uniforms.c.value; return m;
+  }
   const mats = {
     lt: new T.MeshStandardMaterial({ color: 0xeadfc2, roughness: .55, metalness: .05 }),
     dk: new T.MeshStandardMaterial({ color: 0x5d8b6b, roughness: .55, metalness: .05 }),
     frame: new T.MeshStandardMaterial({ color: 0x6a4a1c, roughness: .5, metalness: .2 }),
-    w: new T.MeshStandardMaterial({ color: 0xece5d9, roughness: .34, metalness: .12 }),
-    k: new T.MeshStandardMaterial({ color: 0x2a2724, roughness: .32, metalness: .2 }),
-    wo: new T.MeshBasicMaterial({ color: 0x1a1f2e, side: T.BackSide }),
-    ko: new T.MeshBasicMaterial({ color: 0xdcd3f5, side: T.BackSide }),
+    w: new T.MeshStandardMaterial({ color: 0xfbf5e6, roughness: .3, metalness: .05 }),
+    k: new T.MeshStandardMaterial({ color: 0x241f38, roughness: .3, metalness: .3 }),
+    gold: new T.MeshStandardMaterial({ color: 0xf2c14e, roughness: .22, metalness: .95 }),
+    wo: outlineMat(0x2a1a08, .022),
+    ko: outlineMat(0xffe7a0, .022),
     fog: new T.MeshStandardMaterial({ color: 0x0a1210, roughness: 1, transparent: true, opacity: .62 })
   };
 
@@ -528,58 +534,36 @@ function create(wrap, onPick) {
   const slab = new T.Mesh(new T.BoxGeometry(8.9, .34, 8.9), mats.frame); slab.position.y = -.33; slab.receiveShadow = true; board.add(slab);
   [[8.9, .3, -4.3, 0], [8.9, .3, 4.3, 0]].forEach(a => { const m = new T.Mesh(new T.BoxGeometry(8.9, .3, .3), mats.frame); m.position.set(0, -.07, a[2]); m.castShadow = true; m.receiveShadow = true; board.add(m); });
   [-4.3, 4.3].forEach(x => { const m = new T.Mesh(new T.BoxGeometry(.3, .3, 8.3), mats.frame); m.position.set(x, -.07, 0); m.castShadow = true; m.receiveShadow = true; board.add(m); });
+  [[8.22, .06, 0, -4.08], [8.22, .06, 0, 4.08]].forEach(a => { const m = new T.Mesh(new T.BoxGeometry(a[0], .03, a[1]), mats.gold); m.position.set(a[2], .005, a[3]); m.raycast = () => {}; board.add(m); });
+  [-4.08, 4.08].forEach(x => { const m = new T.Mesh(new T.BoxGeometry(.06, .03, 8.22), mats.gold); m.position.set(x, .005, 0); m.raycast = () => {}; board.add(m); });
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(a => { const m = new T.Mesh(new T.BoxGeometry(.5, .34, .5), mats.gold); m.position.set(a[0] * 4.25, -.06, a[1] * 4.25); m.castShadow = true; m.raycast = () => {}; board.add(m); });
   const ground = new T.Mesh(new T.PlaneGeometry(60, 60), new T.ShadowMaterial({ opacity: .38 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.52; ground.receiveShadow = true; scene.add(ground);
   const floorMat = new T.MeshStandardMaterial({ color: 0x333333, roughness: 1, metalness: 0 });
   const floorDisc = new T.Mesh(new T.CircleGeometry(12.5, 56), floorMat); floorDisc.rotation.x = -Math.PI / 2; floorDisc.position.y = -.535; floorDisc.receiveShadow = true; floorDisc.visible = false; floorDisc.raycast = () => {}; scene.add(floorDisc);
   const worldGroup = new T.Group(); scene.add(worldGroup);
-  const U = { s: new T.SphereGeometry(1, 16, 12), c: new T.CylinderGeometry(1, 1, 1, 16), n: new T.ConeGeometry(1, 1, 14), b: new T.BoxGeometry(1, 1, 1), t: new T.TorusGeometry(1, .18, 8, 24), p: new T.ConeGeometry(1, 1, 4) };
+  const U = { s: new T.SphereGeometry(1, 16, 12), c: new T.CylinderGeometry(1, 1, 1, 16), n: new T.ConeGeometry(1, 1, 14), b: new T.BoxGeometry(1, 1, 1), t: new T.TorusGeometry(1, .18, 8, 24), p: new T.ConeGeometry(1, 1, 4), f: new T.CylinderGeometry(1, .62, 1, 16), o: new T.CylinderGeometry(.1, .2, 2.2, 4).rotateY(Math.PI / 4) };
   function mkProp(type, i) {
     const g = new T.Group();
-    const Mt = (c, o) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: .7 }, o || {}));
+    const Mt = (c, o) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: .8 }, o || {}));
     const add = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy === undefined ? sx : sy, sz === undefined ? sx : sz); m.rotation.set(rx || 0, ry || 0, rz || 0); m.castShadow = true; m.raycast = () => {}; g.add(m); return m; };
-    const pal = ['#ff6b81', '#feca57', '#54a0ff', '#1dd1a1', '#a55eea', '#ff9f43'];
-    const pc = pal[i % pal.length];
+    const stone = Mt('#dcc089'), stoneD = Mt('#b8975c'), gd = mats.gold, green = Mt('#3f9d54'), trunk = Mt('#8a6436');
+    const palm = (x, h) => { add(U.c, trunk, x, h / 2, 0, .07, h, .07, 0, 0, .08); for (let k = 0; k < 6; k++) { const a = k * 1.047; add(U.s, green, x + Math.cos(a) * .32 - .06, h + .02, Math.sin(a) * .32, .4, .05, .13, 0, -a, -.35); } add(U.s, Mt('#a8641c'), x - .05, h - .08, .08, .07); };
+    const column = (x, h, cap) => { add(U.c, stone, x, h / 2, 0, .17, h, .17); add(U.f, cap ? Mt(cap) : stoneD, x, h + .12, 0, .27, .26, .27); add(U.b, stone, x, h + .3, 0, .6, .1, .6); add(U.c, Mt('#c0392b'), x, h - .08, 0, .18, .07, .18); add(U.c, Mt('#2456b8'), x, h - .2, 0, .18, .07, .18); add(U.b, stoneD, x, .06, 0, .5, .12, .5); };
+    const statueHead = (x, y, z, r) => { add(U.s, stone, x, y, z, r); add(U.b, stoneD, x, y - r * .1, z - r * .25, r * 2.3, r * 2.0, r * 1.3); add(U.b, stoneD, x, y - r * 1.2, z + r * .9, r * .3, r * .7, r * .3); };
     switch (type) {
-      case 'desert':
-        if (i % 2) { add(U.p, Mt('#e0b567'), 0, .7, 0, 1.0, 1.4, 1.0, 0, Math.PI / 4, 0); }
-        else { const m = Mt('#3f9d54'); add(U.c, m, 0, .6, 0, .2, 1.2, .2); add(U.s, m, 0, 1.2, 0, .2, .2, .2); add(U.c, m, .32, .75, 0, .1, .5, .1); add(U.c, m, -.32, .95, 0, .1, .5, .1); add(U.c, m, .16, .55, 0, .17, .08, .1, 0, 0, Math.PI / 2); add(U.c, m, -.16, .8, 0, .17, .08, .1, 0, 0, Math.PI / 2); }
-        break;
-      case 'snow':
-        add(U.c, Mt('#6b4a2a'), 0, .15, 0, .1, .3, .1); [0, 1, 2].forEach(k => { add(U.n, Mt('#2f7d4a'), 0, .55 + k * .42, 0, .6 - k * .13, .7, .6 - k * .13); add(U.n, Mt('#ffffff'), 0, .72 + k * .42, 0, .4 - k * .09, .34, .4 - k * .09); });
-        break;
-      case 'space':
-        add(U.s, Mt(pc, { roughness: .5 }), 0, 1, 0, .6 + (i % 3) * .1); if (i % 2) add(U.t, Mt('#ffe9a8', { emissive: '#ffd36a', emissiveIntensity: .3 }), 0, 1, 0, 1.0, 1.0, .14, Math.PI / 2.3, 0, .3);
-        break;
-      case 'jungle':
-        add(U.c, Mt('#7a5a32'), 0, .8, 0, .09, 1.6, .09, 0, 0, .12); [0, 1, 2, 3].forEach(k => add(U.s, Mt('#2fa05a'), Math.cos(k * 1.57 + .4) * .35 + .1, 1.6, Math.sin(k * 1.57 + .4) * .35, .5, .08, .18, 0, -k * 1.57 - .4, .25)); add(U.s, Mt('#8a5a20'), .12, 1.55, .1, .09);
-        break;
-      case 'candy':
-        if (i % 2) { add(U.c, Mt('#ffffff'), 0, .6, 0, .05, 1.2, .05); add(U.s, Mt(pc), 0, 1.35, 0, .38, .38, .12); add(U.t, Mt('#ffffff'), 0, 1.35, .05, .3, .3, .5); }
-        else { add(U.c, Mt(pc), 0, .3, 0, .38, .6, .38); add(U.s, Mt('#fff3e0'), 0, .72, 0, .42, .3, .42); add(U.s, Mt('#ff4d6d'), 0, 1.0, 0, .1); }
-        break;
-      case 'volcano':
-        add(U.n, Mt('#3b2a2a'), 0, .8, 0, 1.0, 1.6, 1.0); add(U.n, Mt('#ff7a1a', { emissive: '#ff4400', emissiveIntensity: .9 }), 0, 1.55, 0, .3, .35, .3);
-        break;
-      case 'ocean':
-        { const m = Mt(['#ff7a9c', '#ffb26b', '#c56bff'][i % 3]); add(U.c, m, 0, .35, 0, .1, .7, .1); add(U.c, m, .22, .5, 0, .08, .55, .08, 0, 0, -.5); add(U.c, m, -.2, .55, 0, .08, .6, .08, 0, 0, .5); add(U.s, Mt('#ffffff', { transparent: true, opacity: .5 }), .3, 1.3 + (i % 2) * .3, 0, .13); }
-        break;
-      case 'haunted':
-        if (i % 2) { add(U.b, Mt('#8d8da8'), 0, .4, 0, .5, .8, .16); add(U.c, Mt('#8d8da8'), 0, .8, 0, .25, .16, .25, Math.PI / 2, 0, 0); }
-        else { const m = Mt('#2a2236'); add(U.c, m, 0, .6, 0, .08, 1.2, .08); add(U.c, m, .22, 1.0, 0, .04, .5, .04, 0, 0, -.9); add(U.c, m, -.2, .85, 0, .04, .45, .04, 0, 0, .9); add(U.s, Mt('#ffb347', { emissive: '#ff8c00', emissiveIntensity: .6 }), .38, 1.28, 0, .1); }
-        break;
-      case 'cyber':
-        { const c = i % 2 ? '#00e5ff' : '#ff3fd8'; add(U.b, Mt('#14123a'), 0, .5 + (i % 3) * .3, 0, .5, 1 + (i % 3) * .6, .5); add(U.b, Mt(c, { emissive: c, emissiveIntensity: 1.1 }), 0, .6 + (i % 3) * .3, .26, .36, .1, .02); add(U.b, Mt(c, { emissive: c, emissiveIntensity: 1.1 }), 0, 1.1 + (i % 3) * .3, .26, .36, .1, .02); }
-        break;
-      case 'clouds':
-        { const m = Mt('#ffffff', { roughness: 1 }); add(U.s, m, 0, .6, 0, .5); add(U.s, m, .5, .5, .1, .38); add(U.s, m, -.5, .5, -.05, .4); add(U.s, m, .1, .9, 0, .38); }
-        break;
-      case 'toys':
-        add(U.b, Mt(pc), 0, .3, 0, .6, .6, .6); add(U.b, Mt(pal[(i + 2) % 6]), 0, .85, 0, .45, .5, .45, 0, .4, 0); add(U.s, Mt(pal[(i + 4) % 6]), .5, .25, .4, .25);
-        break;
-      case 'temple':
-        { const m = Mt('#e8d29a'); add(U.c, m, 0, .8, 0, .2, 1.4, .2); add(U.b, m, 0, 1.55, 0, .55, .14, .55); add(U.b, m, 0, .08, 0, .5, .16, .5); if (i % 3 === 0) add(U.p, Mt('#d9b45a'), .9, .6, 0, .6, 1.2, .6, 0, Math.PI / 4, 0); }
-        break;
+      case 'giza': { const k = 1 + (i % 3) * .35; add(U.p, i % 2 ? stone : stoneD, 0, .65 * k, 0, 1.05 * k, 1.3 * k, 1.05 * k, 0, Math.PI / 4, 0); add(U.p, gd, 0, 1.22 * k, 0, .13 * k, .17 * k, .13 * k, 0, Math.PI / 4, 0); } break;
+      case 'nile': if (i % 2) palm(0, 1.5 + (i % 3) * .25); else { for (let k = 0; k < 4; k++) { const x = (k - 1.5) * .22; add(U.c, green, x, .5 + (k % 2) * .12, 0, .025, 1 + (k % 2) * .24, .025, 0, 0, (k - 1.5) * .08); add(U.n, Mt('#7fc46a'), x + (k - 1.5) * .05, 1.08 + (k % 2) * .24, 0, .17, .22, .17, Math.PI); } } break;
+      case 'saqqara': for (let k = 0; k < 5; k++) add(U.b, k % 2 ? stone : stoneD, 0, .14 + k * .28, 0, 2.0 - k * .36, .28, 1.6 - k * .28); break;
+      case 'karnak': if (i % 3 === 1) { add(U.o, Mt('#d48a6a'), 0, 1.1, 0, 1, 1, 1); add(U.p, gd, 0, 2.32, 0, .13, .26, .13, 0, Math.PI / 4, 0); add(U.b, stoneD, 0, .08, 0, .6, .16, .6); } else column(0, 1.5 + (i % 2) * .3); break;
+      case 'siwa': if (i % 3 === 0) { add(U.c, Mt('#3fa7d6', { roughness: .2 }), 0, .03, .3, .9, .04, .5); palm(-.5, 1.3); } else if (i % 3 === 1) palm(0, 1.7); else add(U.s, Mt('#e6c27a'), 0, 0, 0, 1.3, .5, .8); break;
+      case 'kings': { add(U.s, Mt('#c98a55'), 0, .2, -.2, 1.25, 1.5 + (i % 3) * .3, .8); if (i % 2 === 0) { add(U.b, gd, 0, .55, .56, .62, 1.0, .08); add(U.b, Mt('#1a1210'), 0, .5, .6, .46, .86, .08); } } break;
+      case 'simbel': { add(U.b, stoneD, 0, .35, -.1, .9, .7, .8); add(U.b, stone, 0, .95, -.15, .7, .8, .45); add(U.b, stone, 0, .5, .32, .66, .28, .5); [-1, 1].forEach(s2 => add(U.b, stone, s2 * .2, .3, .52, .2, .6, .2)); statueHead(0, 1.62, -.1, .3); } break;
+      case 'philae': if (i % 2) column(0, 1.4, '#3f9d54'); else { add(U.c, Mt('#3fa7d6', { roughness: .2 }), 0, .02, .2, 1.0, .03, .6); add(U.c, green, .2, .05, .3, .3, .03, .3); for (let k = 0; k < 6; k++) { const a = k * 1.047; add(U.n, Mt(k % 2 ? '#ff9ec4' : '#fff0f6'), .2 + Math.cos(a) * .07, .2, .3 + Math.sin(a) * .07, .07, .26, .07, Math.sin(a) * .5, 0, -Math.cos(a) * .5); } } break;
+      case 'alex': if (i % 3 === 1) { add(U.b, stone, 0, .6, 0, .7, 1.2, .7); add(U.c, Mt('#f1e3c0'), 0, 1.55, 0, .26, .7, .26); add(U.c, stone, 0, 2.05, 0, .16, .3, .16); add(U.s, Mt('#ffd36a', { emissive: '#ffb300', emissiveIntensity: 1.6 }), 0, 2.3, 0, .15); add(U.n, stoneD, 0, 2.5, 0, .18, .2, .18); } else { add(U.s, Mt('#8a5a2a'), 0, .16, 0, .7, .2, .26); add(U.c, trunk, 0, .7, 0, .025, 1.0, .025); add(U.b, Mt('#fff6e0'), .02, .78, 0, .5, .62, .02, 0, 0, 0); } break;
+      case 'white': { const wm = Mt('#f4f1e8'); add(U.c, wm, 0, .35, 0, .16 + (i % 2) * .06, .7, .16 + (i % 2) * .06); add(U.s, wm, 0, .85, 0, .5 + (i % 3) * .12, .32, .46 + (i % 3) * .1); } break;
+      case 'sphinx': { add(U.b, stone, 0, .35, -.2, .6, .5, 1.3); [-1, 1].forEach(s2 => add(U.b, stone, s2 * .2, .14, .7, .2, .2, .7)); add(U.b, stoneD, 0, .1, 0, .9, .2, 1.9); statueHead(0, 1.0, .3, .28); } break;
+      case 'throne': if (i % 2) { add(U.c, gd, 0, .9, 0, .15, 1.8, .15); add(U.f, Mt('#2456b8'), 0, 1.9, 0, .26, .26, .26); add(U.b, gd, 0, 2.08, 0, .58, .1, .58); add(U.b, Mt('#2456b8'), 0, .08, 0, .5, .16, .5); } else { add(U.c, stoneD, 0, .5, 0, .09, 1.0, .09); add(U.f, gd, 0, 1.08, 0, .2, .18, .2); add(U.n, Mt('#ff8a2a', { emissive: '#ff5a00', emissiveIntensity: 1.6 }), 0, 1.36, 0, .14, .4, .14); } break;
     }
     return g;
   }
@@ -590,7 +574,7 @@ function create(wrap, onPick) {
     floorMat.color.set(w.fl); floorDisc.visible = true;
     for (let i = 0; i < 10; i++) {
       const p = mkProp(w.prop, i); const k = .95 + (i % 3) * .14;
-      p.position.set(-6.6 + i * 1.47 + ((i * 37) % 5 - 2) * .08, -.5, -7.9 - (i % 3) * .45 + (i % 2 ? .25 : 0)); p.scale.setScalar(k * .92); p.rotation.y = (i * 1.7) % 6.28; worldGroup.add(p);
+      p.position.set(-6.6 + i * 1.47 + ((i * 37) % 5 - 2) * .08, -.5, -7.9 - (i % 3) * .45 + (i % 2 ? .25 : 0)); p.scale.setScalar(k * .92); p.rotation.y = ((i * 37) % 7 - 3) * .06; worldGroup.add(p);
     }
     adir = w.dr < 0 ? -1 : 1; aMat.color.set(w.amb); dirty = true;
   }
@@ -611,44 +595,47 @@ function create(wrap, onPick) {
   }
 
   /* ---------- pieces ---------- */
+  const P0 = (r) => [[0, 0], [r, 0], [r + .02, .04], [r + .02, .1], [r - .07, .14]];
   const profiles = {
-    1: [[0,0],[.30,0],[.32,.04],[.32,.08],[.24,.12],[.15,.2],[.11,.32],[.10,.42],[.18,.45],[.18,.48],[.10,.5],[0,.5]],
-    4: [[0,0],[.34,0],[.36,.04],[.36,.09],[.28,.14],[.2,.22],[.19,.55],[.27,.6],[.29,.66],[.29,.8],[0,.8]],
-    3: [[0,0],[.33,0],[.35,.04],[.35,.09],[.27,.14],[.18,.22],[.12,.4],[.15,.48],[.22,.52],[.22,.56],[.14,.6],[0,.6]],
-    5: [[0,0],[.35,0],[.37,.04],[.37,.09],[.29,.14],[.19,.22],[.12,.5],[.14,.7],[.24,.88],[.26,.96],[.2,1.0],[0,1.0]],
-    6: [[0,0],[.36,0],[.38,.04],[.38,.09],[.3,.14],[.2,.22],[.13,.55],[.15,.78],[.25,.95],[.27,1.03],[.2,1.07],[0,1.07]],
-    2: [[0,0],[.33,0],[.35,.04],[.35,.09],[.28,.13],[.26,.16],[0,.16]]
+    1: P0(.31).concat([[.14, .24], [.11, .38], [.17, .42], [.17, .46], [0, .46]]),
+    2: P0(.34).concat([[.27, .17], [0, .17]]),
+    3: P0(.33).concat([[.2, .18], [0, .18]]),
+    4: P0(.37).concat([[.3, .18], [0, .18]]),
+    5: P0(.36).concat([[.18, .24], [.12, .5], [.13, .62], [.2, .66], [.2, .7], [.15, .72], [.24, .98], [.26, 1.0], [0, 1.0]]),
+    6: P0(.37).concat([[.19, .24], [.13, .52], [.14, .64], [.21, .68], [.21, .72], [.16, .74], [.2, .86], [.19, 1.0], [.12, 1.1], [.07, 1.14], [0, 1.15]])
   };
   const lathes = {};
   Object.keys(profiles).forEach(k => { lathes[k] = new T.LatheGeometry(profiles[k].map(p => new T.Vector2(p[0], p[1])), 32); });
-  const sphere = new T.SphereGeometry(1, 20, 14);
-  const box = new T.BoxGeometry(1, 1, 1);
-  // knight head
-  const kp = [[.22,.14],[.2,.36],[.33,.52],[.46,.62],[.46,.73],[.32,.82],[.24,.99],[.13,.9],[-.02,1.0],[-.17,.84],[-.27,.58],[-.23,.14]];
+  const sphere = new T.SphereGeometry(1, 20, 14), box = new T.BoxGeometry(1, 1, 1), cyl = new T.CylinderGeometry(1, 1, 1, 24);
+  const pylon = new T.CylinderGeometry(.24, .32, .5, 4).rotateY(Math.PI / 4), cornice = new T.CylinderGeometry(.36, .25, .12, 4).rotateY(Math.PI / 4);
+  const obShaft = new T.CylinderGeometry(.11, .19, .74, 4).rotateY(Math.PI / 4), obTip = new T.ConeGeometry(.115, .2, 4).rotateY(Math.PI / 4);
+  const band4 = new T.CylinderGeometry(1, 1.03, 1, 4).rotateY(Math.PI / 4), ankhLoop = new T.TorusGeometry(.075, .03, 8, 18);
+  const kp = [[.22, .14], [.2, .36], [.33, .52], [.46, .62], [.46, .73], [.32, .82], [.24, .99], [.13, .9], [-.02, 1.0], [-.17, .84], [-.27, .58], [-.23, .14]];
   const ksp = new T.SplineCurve(kp.map(p => new T.Vector2(p[0], p[1]))).getPoints(90);
   const ks = new T.Shape(); ks.moveTo(-.23, .14); ks.lineTo(.22, .14); ksp.forEach(p => ks.lineTo(p.x, p.y)); ks.closePath();
-  const knightGeo = new T.ExtrudeGeometry(ks, { depth: .24, bevelEnabled: true, bevelThickness: .06, bevelSize: .05, bevelSegments: 4, curveSegments: 4 });
-  knightGeo.translate(0, 0, -.12);
+  const knightGeo = new T.ExtrudeGeometry(ks, { depth: .22, bevelEnabled: true, bevelThickness: .06, bevelSize: .05, bevelSegments: 4, curveSegments: 4 });
+  knightGeo.translate(0, 0, -.11);
 
+  let curOut = null;
   function part(g, geo, mat, x, y, z, sx, sy, sz) {
     const m = new T.Mesh(geo, mat); m.position.set(x, y, z);
     if (sx !== undefined) m.scale.set(sx, sy, sz); m.castShadow = true; m.receiveShadow = true; g.add(m);
-    if (curOut) { const o = new T.Mesh(geo, curOut); o.scale.setScalar(1.08); o.raycast = () => {}; m.add(o); }
+    if (curOut) { const o = new T.Mesh(geo, curOut); o.raycast = () => {}; m.add(o); }
     return m;
   }
-  let curOut = null;
   function buildPiece(type, side) {
-    const mat = side > 0 ? mats.w : mats.k;
+    const mat = side > 0 ? mats.w : mats.k, G = mats.gold;
     curOut = side > 0 ? mats.wo : mats.ko;
     const g = new T.Group();
     part(g, lathes[type], mat, 0, 0, 0);
-    if (type === 1) part(g, sphere, mat, 0, .64, 0, .17, .17, .17);
-    else if (type === 4) { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283; const m = part(g, box, mat, Math.cos(a) * .22, .88, Math.sin(a) * .22, .12, .16, .12); m.rotation.y = -a; } }
-    else if (type === 3) { part(g, sphere, mat, 0, .86, 0, .17, .27, .17); part(g, sphere, mat, 0, 1.17, 0, .06, .06, .06); }
-    else if (type === 5) { for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; part(g, sphere, mat, Math.cos(a) * .2, 1.03, Math.sin(a) * .2, .05, .05, .05); } part(g, sphere, mat, 0, 1.12, 0, .09, .09, .09); }
-    else if (type === 6) { part(g, box, mat, 0, 1.3, 0, .07, .32, .07); part(g, box, mat, 0, 1.36, 0, .24, .07, .07); }
-    else if (type === 2) { const m = part(g, knightGeo, mat, 0, 0, 0); m.rotation.y = side > 0 ? 0 : Math.PI; }
-    g.scale.setScalar(.96);
+    part(g, cyl, G, 0, .12, 0, type === 1 ? .255 : .3, .035, type === 1 ? .255 : .3);
+    if (type === 1) { part(g, sphere, mat, 0, .62, 0, .175, .175, .175); part(g, cyl, G, 0, .45, 0, .175, .04, .175); }
+    else if (type === 4) { part(g, pylon, mat, 0, .43, 0); part(g, cornice, mat, 0, .74, 0); part(g, band4, G, 0, .66, 0, .262, .045, .262); }
+    else if (type === 3) { part(g, obShaft, mat, 0, .55, 0); part(g, obTip, G, 0, 1.02, 0); part(g, band4, G, 0, .26, 0, .2, .05, .2); part(g, band4, G, 0, .8, 0, .137, .04, .137); }
+    else if (type === 5) { part(g, cyl, G, 0, .68, 0, .215, .045, .215); part(g, cyl, G, 0, .97, 0, .262, .04, .262); part(g, sphere, G, 0, 1.13, 0, .13, .13, .05); part(g, sphere, G, 0, 1.13, 0, .05, .05, .13); }
+    else if (type === 6) { part(g, cyl, G, 0, .7, 0, .225, .045, .225); part(g, box, G, 0, 1.24, 0, .045, .2, .045); part(g, box, G, 0, 1.3, 0, .2, .045, .045); part(g, ankhLoop, G, 0, 1.42, 0); }
+    else if (type === 2) { const m = part(g, knightGeo, mat, 0, .03, 0); m.rotation.y = side > 0 ? 0 : Math.PI; part(g, cyl, G, 0, .2, 0, .25, .05, .2); }
+    g.scale.setScalar(1.12);
     curOut = null;
     return g;
   }
@@ -743,7 +730,6 @@ function create(wrap, onPick) {
     const e = c.neon ? .32 : 0;
     mats.w.emissive.set(c.neon ? c.wc : 0x000000); mats.w.emissiveIntensity = e;
     mats.k.emissive.set(c.neon ? c.kc : 0x000000); mats.k.emissiveIntensity = e;
-    mats.w.metalness = c.gold ? .35 : .12; mats.k.metalness = c.gold ? .4 : .2;
     mats.lt.emissive.set(c.neon ? c.lt : 0x000000); mats.lt.emissiveIntensity = c.neon ? .5 : 0;
     mats.dk.emissive.set(c.neon ? c.dk : 0x000000); mats.dk.emissiveIntensity = c.neon ? .5 : 0;
     labelMat.forEach(m => m.color.set(c.label || '#ffffff'));
@@ -751,13 +737,13 @@ function create(wrap, onPick) {
   }
 
   /* ---------- camera ---------- */
-  const views = [{ az: 0, el: 50 }, { az: 0, el: 86 }, { az: 0, el: 28 }, { az: Math.PI, el: 52 }];
+  const views = [{ az: 0, el: 47 }, { az: 0, el: 86 }, { az: 0, el: 28 }, { az: Math.PI, el: 52 }];
   let vi = 0;
-  const cs = { az: 0, el: 50 * Math.PI / 180, zoom: 1 }, ct = { az: 0, el: 50 * Math.PI / 180, zoom: 1 };
+  const cs = { az: 0, el: 47 * Math.PI / 180, zoom: 1 }, ct = { az: 0, el: 47 * Math.PI / 180, zoom: 1 };
   let W = 300, H = 300;
   function fitDist() {
     const vf = cam.fov * Math.PI / 180, aspect = W / H, Tv = Math.tan(vf / 2), Th = Tv * aspect;
-    const dH = 5.0 / Th, el = cs.el, Z = 7.0, Y = 3.0, se = Math.sin(el), ce = Math.cos(el);
+    const dH = 5.0 / Th, el = cs.el, Z = 7.75, Y = 3.0, se = Math.sin(el), ce = Math.cos(el);
     const dA = (-8.8 * ce + Y * se) + (Y * ce + 8.8 * se) / Tv, dB = (Z * ce) + (Z * se) / Tv;
     return Math.max(dH, dA, dB) * 1.035;
   }
@@ -795,15 +781,16 @@ function create(wrap, onPick) {
   /* ---------- characters ---------- */
   const CH = root.CHAR3D, chars = { p: null, e: null }, pods = [];
   const podGeo = new T.CylinderGeometry(1, 1.08, .34, 36);
-  ['p', 'e'].forEach((k, i) => { const m = new T.Mesh(podGeo, mats.frame); m.scale.set(.85, 1, .85); m.position.set(k === 'p' ? -2.5 : 2.5, -.35, k === 'p' ? 5.9 : -5.9); m.receiveShadow = true; m.raycast = () => {}; scene.add(m); pods.push(m); });
+  ['p', 'e'].forEach((k, i) => { const m = new T.Mesh(podGeo, mats.frame); m.scale.set(.95, 1, .95); m.position.set(k === 'p' ? -2.7 : 2.6, -.35, k === 'p' ? 6.55 : -5.9); m.receiveShadow = true; m.raycast = () => {}; scene.add(m); pods.push(m); });
   function setChars(ps, es) {
-    ['p', 'e'].forEach(k => { if (chars[k]) { scene.remove(chars[k].g); chars[k] = null; } });
+    ['p', 'e'].forEach(k => { if (chars[k]) { scene.remove(chars[k].holder); chars[k] = null; } });
     if (!CH) return;
-    [['p', ps, -2.5, 5.9, .38, 1.02], ['e', es, 2.5, -5.9, -.38, 1.1]].forEach(a => {
+    [['p', ps, -2.7, 6.55, .3, 1.05], ['e', es, 2.6, -5.9, -.3, 1.2]].forEach(a => {
       if (!a[1]) return;
-      const g = CH.make(a[1]); const base = g.scale.x; g.scale.setScalar(base * a[5]); g.position.set(a[2], -.18, a[3]); g.rotation.y = a[4];
+      const g = CH.make(a[1]); const base = g.scale.x; g.scale.setScalar(base * a[5]);
+      const holder = new T.Group(); holder.position.set(a[2], -.18, a[3]); holder.rotation.x = -.3; holder.add(g);
       g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.raycast = () => {}; } });
-      scene.add(g); chars[a[0]] = { g, anim: CH.newAnim(g), ry: a[4] };
+      scene.add(holder); chars[a[0]] = { g, holder, anim: CH.newAnim(g), ry: a[4] };
     });
     dirty = true;
   }
@@ -892,15 +879,24 @@ function create(wrap, onPick) {
     snapshot() { placeCam(); renderer.render(scene, cam); return cv.toDataURL(); }
   };
 }
+root.V3D_env = function (renderer) {
+  const pm = new T.PMREMGenerator(renderer), es = new T.Scene();
+  es.add(new T.Mesh(new T.SphereGeometry(30, 16, 8), new T.MeshBasicMaterial({ color: 0x2e2a24, side: T.BackSide })));
+  [[0, 22, 0, 14, 0xffffff, 1.5], [18, 8, 10, 8, 0xffe0a8, 1.6], [-18, 6, -8, 8, 0xa8c8ff, 1.0], [0, -20, 0, 18, 0xc9a66a, .25]].forEach(a => {
+    const m = new T.Mesh(new T.BoxGeometry(a[3], a[3], a[3]), new T.MeshBasicMaterial({ color: new T.Color(a[4]).multiplyScalar(a[5]) })); m.position.set(a[0], a[1], a[2]); es.add(m); });
+  const t = pm.fromScene(es, .04).texture; pm.dispose(); return t;
+};
 function preview(host, specs) {
   let renderer;
   try { renderer = new T.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
   if (!renderer || !renderer.getContext()) return null;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.outputColorSpace = T.SRGBColorSpace;
+  renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
   const cv = renderer.domElement; cv.style.cssText = 'width:100%;height:100%;display:block'; host.appendChild(cv);
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 50);
-  scene.add(new T.HemisphereLight(0xffffff, 0x667788, 1.25));
+  try { scene.environment = root.V3D_env(renderer); } catch (e) {}
+  scene.add(new T.HemisphereLight(0xfff4dc, 0x6a5a48, .6));
   const sun = new T.DirectionalLight(0xffffff, 2.2); sun.position.set(2, 6, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left = -4; sun.shadow.camera.right = 4; sun.shadow.camera.top = 4; sun.shadow.camera.bottom = -2; scene.add(sun);
   const floor = new T.Mesh(new T.CircleGeometry(5, 40), new T.ShadowMaterial({ opacity: .35 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
@@ -2000,7 +1996,7 @@ const CM = {
    chkW:['⚡ Check!','🔥 King in danger!'], chkB:['🚨 You are in check!','⚠️ Your king is hunted!'], promo:['👑 Promotion!'], castle:['🏰 Castled!'], start:['Let’s go! ♟️','Show me what you’ve got 💪'] }};
 const TX = {
 ar:{
- title:'سِنِت', sub:'خصم بلا رحمة، مستويات بلا نهاية… إلى أي مستوى تصمد؟',
+ title:'سِنِت', sub:'لعبة الفراعنة · تحدَّ ١٢٠ منافسًا عبر أرض مصر القديمة',
  cont:'تابع الرحلة', neu:'رحلة جديدة', best:'أفضل رحلة: المستوى {l} · {s} نقطة', lvl:'المستوى', score:'النقاط',
  yours:'دورك', think:'الخصم يفكّر', check:'كش! دورك', dblOn:'⚡ حركة ثانية متاحة', dbl2:'⚡ حركتك الثانية',
  undo:'تراجع', hint:'تلميح', dbl:'حركتان', rev:'إحياء', menu:'القائمة',
@@ -2033,7 +2029,7 @@ ar:{
  th:{emerald:'زمرد',wood:'خشب',midnight:'منتصف الليل',marble:'رخام',pharaoh:'فرعوني',neon:'نيون'}
 },
 en:{
- title:'Senet', sub:'A merciless opponent, levels without end… how far can you go?',
+ title:'Senet', sub:'The game of the pharaohs · defeat 120 rivals across ancient Egypt',
  cont:'Continue run', neu:'New run', best:'Best run: level {l} · {s} pts', lvl:'LEVEL', score:'SCORE',
  yours:'Your move', think:'Opponent is thinking', check:'Check! Your move', dblOn:'⚡ Extra move armed', dbl2:'⚡ Your second move',
  undo:'Undo', hint:'Hint', dbl:'Double', rev:'Revive', menu:'Menu',
@@ -2090,7 +2086,7 @@ const PAL3={
   wood:{lt:'#e6c08a',dk:'#9a6a3c',frame:'#4a2c12',wc:'#fffaf0',kc:'#1d1510',wo:'#2a1608',ko:'#ffe6c4'},
   midnight:{lt:'#93a8e6',dk:'#4a5da6',frame:'#1d2547',wc:'#f6f9ff',kc:'#0b0d18',wo:'#0f1430',ko:'#cfd9ff'},
   marble:{lt:'#c3c9d6',dk:'#6f7890',frame:'#3b3f4b',wc:'#ffffff',kc:'#14151b',wo:'#1a1d29',ko:'#e6e9f5'},
-  pharaoh:{lt:'#e9cb86',dk:'#3b8ea5',frame:'#6b4a12',wc:'#fff9e3',kc:'#24150a',wo:'#1d2a30',ko:'#ffeaa8',gold:true},
+  pharaoh:{lt:'#ecd6a2',dk:'#2f9a94',frame:'#7a5216',wc:'#fffaf0',kc:'#241f38',wo:'#2a1a08',ko:'#ffe7a0',gold:true},
   neon:{lt:'#27346e',dk:'#121842',frame:'#1d1a4a',wc:'#8ffbff',kc:'#ff5fe0',wo:'#06081c',ko:'#f6d8ff',neon:true}
 };
 function themeCols(){
@@ -2175,18 +2171,18 @@ function saveRun(){ if(run) lsSet('chessEndlessRun',run); }
 
 /* ---------- worlds + hero progression ---------- */
 const WORLDS=[
- {e:'🏜️',ar:'الصحراء الذهبية',en:'Golden Desert',prop:'desert',bg:['#5a3a12','#1f1206'],amb:'#ffd98a',fl:'#c9994a'},
- {e:'🌴',ar:'غابة الاستواء',en:'Jungle',prop:'jungle',bg:['#124a2a','#06190f'],amb:'#b8ffb0',fl:'#2d6a3a'},
- {e:'❄️',ar:'أرض الثلج',en:'Snowland',prop:'snow',bg:['#25476e','#0a1424'],amb:'#ffffff',fl:'#cfe3f5',dr:-1},
- {e:'🍭',ar:'مملكة الحلوى',en:'Candy Kingdom',prop:'candy',bg:['#6a2a62','#210a22'],amb:'#ffc6ef',fl:'#f7b6d9'},
- {e:'🌊',ar:'أعماق البحر',en:'Deep Ocean',prop:'ocean',bg:['#0a4a6e','#031322'],amb:'#a8ecff',fl:'#1d6f8c'},
- {e:'🌋',ar:'جبل النار',en:'Fire Mountain',prop:'volcano',bg:['#6a1a0a','#1a0603'],amb:'#ff9a4a',fl:'#4a2a22'},
- {e:'👻',ar:'وادي الأشباح',en:'Haunted Valley',prop:'haunted',bg:['#2a1a4a','#0a0616'],amb:'#d6b8ff',fl:'#2f2a44'},
- {e:'🚀',ar:'الفضاء',en:'Outer Space',prop:'space',bg:['#101a4a','#02030c'],amb:'#ffffff',fl:'#1a1f3e'},
- {e:'🤖',ar:'المدينة الرقمية',en:'Cyber City',prop:'cyber',bg:['#2a0a4a','#05020f'],amb:'#7df9ff',fl:'#161033'},
- {e:'☁️',ar:'مدينة السحاب',en:'Cloud City',prop:'clouds',bg:['#3a6ea8','#122440'],amb:'#ffffff',fl:'#cfe0f2'},
- {e:'🧸',ar:'غرفة الألعاب',en:'Toy Room',prop:'toys',bg:['#5a3a1a','#1c1008'],amb:'#fff0b0',fl:'#c79a6a'},
- {e:'🏛️',ar:'معبد الفراعنة',en:'Pharaoh Temple',prop:'temple',bg:['#4a3210','#1c1205'],amb:'#ffd36a',fl:'#b8913a'}];
+ {e:'🔺',ar:'أهرامات الجيزة',en:'Giza Pyramids',prop:'giza',bg:['#6a4a1a','#231506'],amb:'#ffe2a0',fl:'#d9b06a'},
+ {e:'🌴',ar:'ضفاف النيل',en:'Banks of the Nile',prop:'nile',bg:['#1f5a4a','#08201a'],amb:'#c8ffd0',fl:'#6fae6a'},
+ {e:'🧱',ar:'سقارة',en:'Saqqara',prop:'saqqara',bg:['#7a5a2a','#2a1a0a'],amb:'#ffe9b8',fl:'#cfa869'},
+ {e:'🏛️',ar:'معبد الكرنك',en:'Karnak Temple',prop:'karnak',bg:['#6a3a1a','#20100a'],amb:'#ffd9a0',fl:'#c9a070'},
+ {e:'💧',ar:'واحة سيوة',en:'Siwa Oasis',prop:'siwa',bg:['#2a6a7a','#0a2028'],amb:'#d8fff4',fl:'#e0c488'},
+ {e:'⚱️',ar:'وادي الملوك',en:'Valley of the Kings',prop:'kings',bg:['#7a3a1a','#240e06'],amb:'#ffc890',fl:'#c98a58'},
+ {e:'🗿',ar:'أبو سمبل',en:'Abu Simbel',prop:'simbel',bg:['#8a5a1a','#2a1806'],amb:'#fff0b8',fl:'#d6ac62'},
+ {e:'🪷',ar:'جزيرة فيلة',en:'Philae Island',prop:'philae',bg:['#1f4f7a','#081828'],amb:'#c8e8ff',fl:'#5fa7b8'},
+ {e:'🌊',ar:'فنار الإسكندرية',en:'Alexandria Lighthouse',prop:'alex',bg:['#1a3f7a','#060f26'],amb:'#ffffff',fl:'#2f78b0'},
+ {e:'🌙',ar:'الصحراء البيضاء',en:'White Desert',prop:'white',bg:['#2a2a5a','#0a0a1e'],amb:'#ffffff',fl:'#e9e4d6'},
+ {e:'🦁',ar:'طريق الكباش',en:'Avenue of Sphinxes',prop:'sphinx',bg:['#7a4a2a','#26140a'],amb:'#ffdca0',fl:'#d2a868'},
+ {e:'👑',ar:'قاعة العرش',en:'Throne Hall',prop:'throne',bg:['#4a1a4a','#140614'],amb:'#ffd36a',fl:'#3a2a5a'}];
 function worldOf(L){ return WORLDS[Math.floor(((L-1)%120)/10)]; }
 function stageOf(L){ return ((L-1)%10)+1; }
 function applyWorld(L){
@@ -2197,26 +2193,26 @@ function applyWorld(L){
 let meta=lsGet('chessEndlessMeta')||{xp:0};
 function lvlOfXp(xp){ return 1+Math.floor((Math.sqrt(1+8*xp/100)-1)/2); }
 function xpAt(n){ return 100*n*(n-1)/2; }
-const HAT_UNLOCK=[1,12,5,3,6,2,7,4,9], HAT_EMO=['🚫','👑','🧙','🧢','🎩','🥳','⛑️','🎀','😇'];
-const HERO_COL2=['#ff9f43','#54a0ff','#ff6b81','#1dd1a1','#feca57','#a55eea','#ee5253','#dfe6e9','#00cec9','#fd79a8','#6ab04c','#341f97','#ff793f','#2c3e50','#f8c291','#b8e994'];
+const HAT_UNLOCK=[1,12,6,2,4,3,5,9,7], HAT_EMO=['🚫','👑','🔵','🐍','☀️','🌸','🪶','🏺','🐂'];
+const HERO_COL2=['#2456b8','#1f9a8a','#c0392b','#e0a030','#2b2533','#8e44ad','#3f9d54','#f3ead6','#00a8c6','#e8588a','#7a4a22','#101a5a','#ff7a2a','#5a6a7a','#b89a5a','#9ad0c0'];
 const COL_UNLOCK=[1,1,1,1,1,1,1,1,2,3,4,5,6,8,10,14];
 function addXp(n){ const before=lvlOfXp(meta.xp); meta.xp+=n; lsSet('chessEndlessMeta',meta); const after=lvlOfXp(meta.xp); const unl=[];
   for(let l=before+1;l<=after;l++){ HAT_UNLOCK.forEach((u,i)=>{ if(u===l) unl.push(HAT_EMO[i]); }); COL_UNLOCK.forEach((u,i)=>{ if(u===l) unl.push('<span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:'+HERO_COL2[i]+';vertical-align:-2px"></span>'); }); }
   return {before,after,unl,gain:n}; }
 
 /* ---------- characters: roster ---------- */
-const SPN={ar:['القط','الدب','الروبوت','التنين','الأرنب','البومة','الشبح','الفضائي','الضفدع','البطريق','الفطر','اليقطينة','الأخطبوط','الصبار','الهلام','الفارس'],
- en:['Cat','Bear','Robot','Dragon','Bunny','Owl','Ghost','Alien','Frog','Penguin','Mushroom','Pumpkin','Octopus','Cactus','Slime','Knight']};
-const SPE=['🐱','🐻','🤖','🐲','🐰','🦉','👻','👽','🐸','🐧','🍄','🎃','🐙','🌵','🟢','🛡️'];
-const NK=[['فلافل','Falafel'],['بسبوسة','Basbousa'],['كشري','Koshary'],['طعمية','Tameya'],['حواوشي','Hawawshi'],['ملوخية','Molokhia'],['كنافة','Kunafa'],['بطاطا','Batata'],
-['زلابية','Zalabia'],['كحك','Kahk'],['فسيخ','Fesikh'],['قرقوش','Karakoush'],['زعتر','Zaatar'],['ريحان','Rayhan'],['ليمون','Lemon'],['نعناع','Naana'],
-['بندق','Bondok'],['فستق','Fostok'],['لوز','Loz'],['كراميل','Caramel'],['مارشميلو','Marshmallow'],['توفي','Toffee'],['جيلي','Jelly'],['بالون','Balloon'],
-['فشار','Fashar'],['سكر','Sokkar'],['عسل','Asal'],['قشطة','Eshta'],['مهلبية','Muhallabia'],['كركديه','Karkadeh'],['سوبيا','Sobia'],['تمر','Tamr'],
-['رمان','Rommaan'],['توت','Toot'],['خوخ','Khokh'],['برق','Barq'],['رعد','Raad'],['نيزك','Nayzak'],['صاروخ','Sarookh'],['شطة','Shatta'],
-['دقة','Dakka'],['كروان','Karawan'],['فنجان','Fingan'],['عنتر','Antar'],['شمس','Shams'],['قمر','Qamar'],['سحاب','Sahab'],['تفاحة','Toffaha']];
-const OCOL=['#e74c3c','#8e44ad','#27ae60','#2980b9','#f39c12','#16a085','#d35400','#e84393','#00b894','#6c5ce7','#c0392b','#3498db','#f1c40f','#7f8c8d'];
+const SPN={ar:['الفرعون','الملكة','القطة','الصقر','ابن آوى','أبو منجل','التمساح','المومياء','الجعران','اللبؤة','أبو الهول','الكوبرا','فرس النهر','الكاتب','الكبش','الحارس'],
+ en:['Pharaoh','Queen','Cat','Falcon','Jackal','Ibis','Crocodile','Mummy','Scarab','Lioness','Sphinx','Cobra','Hippo','Scribe','Ram','Guard']};
+const SPE=['👑','👸','🐱','🦅','🐺','🪶','🐊','🤕','🪲','🦁','🗿','🐍','🦛','📜','🐏','🛡️'];
+const NK=[['أحمس','Ahmose'],['سنفرو','Sneferu'],['خوفو','Khufu'],['خفرع','Khafre'],['منقرع','Menkaure'],['زوسر','Djoser'],['إمحوتب','Imhotep'],['تتي','Teti'],
+['بيبي','Pepi'],['أوناس','Unas'],['منتوحتب','Mentuhotep'],['سنوسرت','Senusret'],['أمنمحات','Amenemhat'],['كامس','Kamose'],['تحتمس','Thutmose'],['حتشبسوت','Hatshepsut'],
+['أمنحتب','Amenhotep'],['تيي','Tiye'],['نفرتيتي','Nefertiti'],['حورمحب','Horemheb'],['سيتي','Seti'],['رمسيس','Ramesses'],['نفرتاري','Nefertari'],['مرنبتاح','Merneptah'],
+['تاوسرت','Tausret'],['بسماتيك','Psamtik'],['نخاو','Necho'],['نختنبو','Nectanebo'],['سنموت','Senenmut'],['حسي','Hesy'],['بتاح حتب','Ptahhotep'],['كاجمني','Kagemni'],
+['مريروكا','Mereruka'],['ويني','Weni'],['حرخوف','Harkhuf'],['سنوهي','Sinuhe'],['خيتي','Khety'],['إيبي','Ipy'],['مننا','Menna'],['رخميرع','Rekhmire'],
+['يويا','Yuya'],['تويا','Thuya'],['باكت','Baket'],['نفرو','Neferu'],['ميريت','Merit'],['عنخ','Ankh'],['خع','Kha'],['نخت','Nakht']];
+const OCOL=['#c0392b','#1f9a8a','#2456b8','#e0a030','#3f9d54','#8e44ad','#d35400','#2b2533','#00a8c6','#b0562a','#5a6a7a','#e8588a','#7a4a22','#101a5a'];
 const BCOL=['#8a1c3d','#1d4e89','#4a4e69','#9d0208','#5a189a','#006d5b'];
-const HERO_SH=[0,1,2,3,4,5,9,7];
+const HERO_SH=[0,1,13,15,2,3,4,7];
 const HERO_COL=['#ff9f43','#54a0ff','#ff6b81','#1dd1a1','#feca57','#a55eea','#ee5253','#dfe6e9'];
 const PERS={ar:[
  {i:['سأنهيك في دقيقتين! 😎','أنا الأفضل هنا.. اعترف!'],c:['هه! سهلة 😏','أتعبتك؟'],l:['مستحيل!! كان مجرد حظ!']},
@@ -2237,7 +2233,7 @@ function oppFor(L){
   const col=boss?BCOL[(((i+1)/5)-1)%6]:OCOL[(i*5+Math.floor(i/3))%OCOL.length];
   const spec={sp,c:col,hat:boss?1:(i*2+m)%9,mood:pers,boss,hc:OCOL[(i*3+5)%OCOL.length]};
   const stars=tier>0?' '+'★'.repeat(Math.min(tier,3)):'';
-  const nameAr=(boss?'👑 ':'')+SPN.ar[sp]+' '+NK[nk][0]+stars;
+  const nameAr=(boss?'👑 ':'')+NK[nk][0]+' '+SPN.ar[sp]+stars;
   const nameEn=(boss?'👑 ':'')+NK[nk][1]+' the '+SPN.en[sp]+stars;
   return {i,spec,pers,boss,emoji:SPE[sp],name:lang==='ar'?nameAr:nameEn,nameAr,nameEn};
 }
@@ -2721,7 +2717,7 @@ function bindThemes(){
 
 function showMenu(){
   const saved=lsGet('chessEndlessRun');
-  let h='<div class="card"><div class="logo">♞</div><h1>'+t('title')+'</h1><p>'+t('sub')+'</p>';
+  let h='<div class="card"><div class="logo"><svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#c88a2a"/></linearGradient></defs><g stroke="#3a2305" stroke-width="2" stroke-linejoin="round"><path d="M150 70 C110 40 60 30 8 34 C30 52 60 62 96 66 C70 68 44 68 22 64 C48 84 96 92 150 84 Z" fill="#1f8f86"/><path d="M150 70 C190 40 240 30 292 34 C270 52 240 62 204 66 C230 68 256 68 278 64 C252 84 204 92 150 84 Z" fill="#1f4fa8"/><path d="M8 34 C60 30 110 40 150 70 C110 52 60 44 8 34Z M292 34 C240 30 190 40 150 70 C190 52 240 44 292 34Z" fill="url(#lg)"/><circle cx="150" cy="66" r="30" fill="#e8552d"/><circle cx="150" cy="66" r="30" fill="none" stroke="url(#lg)" stroke-width="6"/><path d="M150 96 v34 M136 112 h28" stroke="url(#lg)" stroke-width="8" stroke-linecap="round" fill="none"/></g></svg></div><h1>'+t('title')+'</h1><p>'+t('sub')+'</p>';
   const bl=[]; Object.keys(best).forEach(m=>{ if(best[m]&&best[m].l>0) bl.push(MODES[m]+' '+t('best',{l:best[m].l,s:best[m].s})); });
   if(bl.length) h+='<p style="color:var(--acc2);font-size:13px">'+bl.join('<br>')+'</p>';
   if(run && G && !G.over){
