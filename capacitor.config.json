@@ -1,0 +1,7 @@
+{
+  "appId": "com.ahmed.senet",
+  "appName": "سِنِت",
+  "webDir": "www",
+  "backgroundColor": "#1c1205",
+  "android": { "allowMixedContent": false }
+}
